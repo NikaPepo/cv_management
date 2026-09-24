@@ -1,0 +1,41 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+# Real environment file with secrets — must NEVER be committed.
+# Use `.env.example` as the trackable template.
+/.env
+# Local dev overrides (contains APP_SECRET)
+/.env.dev
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> node / frontend ###
+# npm-installed packages and build output are regenerated from
+# package.json / `npm ci` + `npm run build`.
+/frontend/node_modules/
+/frontend/dist/
+###< node / frontend ###
+
+###> IDE / editor ###
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*.bak
+###< IDE / editor ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

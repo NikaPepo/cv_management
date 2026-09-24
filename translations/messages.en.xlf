@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file original="messages" source-language="en" target-language="en" datatype="plaintext">
+        <header/>
+        <body>
+            <trans-unit id="app.title">
+                <source>app.title</source>
+                <target>CV Management</target>
+            </trans-unit>
+            <trans-unit id="nav.home">
+                <source>nav.home</source>
+                <target>Home</target>
+            </trans-unit>
+            <trans-unit id="nav.positions">
+                <source>nav.positions</source>
+                <target>Positions</target>
+            </trans-unit>
+            <trans-unit id="nav.attributes">
+                <source>nav.attributes</source>
+                <target>Attribute Library</target>
+            </trans-unit>
+            <trans-unit id="nav.profile">
+                <source>nav.profile</source>
+                <target>Profile</target>
+            </trans-unit>
+            <trans-unit id="nav.admin">
+                <source>nav.admin</source>
+                <target>Admin</target>
+            </trans-unit>
+            <trans-unit id="nav.login">
+                <source>nav.login</source>
+                <target>Sign in</target>
+            </trans-unit>
+            <trans-unit id="nav.logout">
+                <source>nav.logout</source>
+                <target>Sign out</target>
+            </trans-unit>
+            <trans-unit id="search.placeholder">
+                <source>search.placeholder</source>
+                <target>Search…</target>
+            </trans-unit>
+            <trans-unit id="attr.library.title">
+                <source>attr.library.title</source>
+                <target>Attribute Library</target>
+            </trans-unit>
+            <trans-unit id="attr.library.create">
+                <source>attr.library.create</source>
+                <target>New attribute</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.prefix">
+                <source>attr.lookup.prefix</source>
+                <target>Find by name…</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.category">
+                <source>attr.lookup.category</source>
+                <target>Category</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.recent">
+                <source>attr.lookup.recent</source>
+                <target>Recently used</target>
+            </trans-unit>
+            <trans-unit id="profile.me.title">
+                <source>profile.me.title</source>
+                <target>About me</target>
+            </trans-unit>
+            <trans-unit id="profile.info.title">
+                <source>profile.info.title</source>
+                <target>Information</target>
+            </trans-unit>
+            <trans-unit id="profile.projects.title">
+                <source>profile.projects.title</source>
+                <target>Projects</target>
+            </trans-unit>
+            <trans-unit id="profile.cvs.title">
+                <source>profile.cvs.title</source>
+                <target>CVs</target>
+            </trans-unit>
+            <trans-unit id="attr.empty">
+                <source>attr.empty</source>
+                <target>Empty</target>
+            </trans-unit>
+            <trans-unit id="theme.light">
+                <source>theme.light</source>
+                <target>Light</target>
+            </trans-unit>
+            <trans-unit id="theme.dark">
+                <source>theme.dark</source>
+                <target>Dark</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

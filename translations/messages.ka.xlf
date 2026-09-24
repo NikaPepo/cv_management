@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file original="messages" source-language="en" target-language="ka" datatype="plaintext">
+        <header/>
+        <body>
+            <trans-unit id="app.title">
+                <source>app.title</source>
+                <target>CV მართვის სისტემა</target>
+            </trans-unit>
+            <trans-unit id="nav.home">
+                <source>nav.home</source>
+                <target>მთავარი</target>
+            </trans-unit>
+            <trans-unit id="nav.positions">
+                <source>nav.positions</source>
+                <target>პოზიციები</target>
+            </trans-unit>
+            <trans-unit id="nav.attributes">
+                <source>nav.attributes</source>
+                <target>ატრიბუტების ბიბლიოთეკა</target>
+            </trans-unit>
+            <trans-unit id="nav.profile">
+                <source>nav.profile</source>
+                <target>პროფილი</target>
+            </trans-unit>
+            <trans-unit id="nav.admin">
+                <source>nav.admin</source>
+                <target>ადმინი</target>
+            </trans-unit>
+            <trans-unit id="nav.login">
+                <source>nav.login</source>
+                <target>შესვლა</target>
+            </trans-unit>
+            <trans-unit id="nav.logout">
+                <source>nav.logout</source>
+                <target>გასვლა</target>
+            </trans-unit>
+            <trans-unit id="search.placeholder">
+                <source>search.placeholder</source>
+                <target>ძიება…</target>
+            </trans-unit>
+            <trans-unit id="attr.library.title">
+                <source>attr.library.title</source>
+                <target>ატრიბუტების ბიბლიოთეკა</target>
+            </trans-unit>
+            <trans-unit id="attr.library.create">
+                <source>attr.library.create</source>
+                <target>ახალი ატრიბუტი</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.prefix">
+                <source>attr.lookup.prefix</source>
+                <target>ძებნა სახელით…</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.category">
+                <source>attr.lookup.category</source>
+                <target>კატეგორია</target>
+            </trans-unit>
+            <trans-unit id="attr.lookup.recent">
+                <source>attr.lookup.recent</source>
+                <target>ბოლო დროს გამოყენებული</target>
+            </trans-unit>
+            <trans-unit id="profile.me.title">
+                <source>profile.me.title</source>
+                <target>ჩემს შესახებ</target>
+            </trans-unit>
+            <trans-unit id="profile.info.title">
+                <source>profile.info.title</source>
+                <target>ინფორმაცია</target>
+            </trans-unit>
+            <trans-unit id="profile.projects.title">
+                <source>profile.projects.title</source>
+                <target>პროექტები</target>
+            </trans-unit>
+            <trans-unit id="profile.cvs.title">
+                <source>profile.cvs.title</source>
+                <target>CV-ები</target>
+            </trans-unit>
+            <trans-unit id="attr.empty">
+                <source>attr.empty</source>
+                <target>ცარიელია</target>
+            </trans-unit>
+            <trans-unit id="theme.light">
+                <source>theme.light</source>
+                <target>ღია</target>
+            </trans-unit>
+            <trans-unit id="theme.dark">
+                <source>theme.dark</source>
+                <target>მუქი</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

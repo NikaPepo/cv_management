@@ -1,0 +1,63 @@
+# Files / directories NOT copied into the production image build
+# context. Anything that is local-only, generated, or unused in
+# production goes here. Files that ARE needed for the build
+# (composer.json, package.json, src/, etc.) must NOT be excluded.
+
+# --- VCS / git metadata ---
+.git
+.gitignore
+.gitattributes
+
+# --- Local env files (NEVER copy to image) ---
+.env.local
+.env.*.local
+.env.local.php
+
+# --- IDE / editor cruft ---
+.idea
+.vscode
+.DS_Store
+*.swp
+*.bak
+
+# --- Node / npm ---
+node_modules
+frontend/node_modules
+
+# --- Build outputs (regenerated inside the image) ---
+frontend/dist
+public/bundles
+public/assets
+
+# --- Symfony generated / cache / logs ---
+var/cache
+var/log
+var/share
+
+# --- Composer generated (installed inside the image) ---
+vendor
+
+# --- Local Docker / dev compose / nginx overrides ---
+docker-compose.yaml
+docker-compose.yml
+docker-compose.*.yaml
+docker-compose.*.yml
+docker/php/Dockerfile
+docker/php/conf.d
+docker/nginx/app.conf
+Dockerfile
+.dockerignore
+
+# --- Tests / docs (not used in production runtime) ---
+tests
+docs
+README.md
+CHANGELOG.md
+LICENSE
+
+# --- Editor / formatting ---
+.editorconfig
+
+# --- Editor backup files ---
+*~
+*.tmp

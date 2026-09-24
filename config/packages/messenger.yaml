@@ -1,0 +1,29 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    multiplier: 2
+            failed: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        default_bus: messenger.bus.default
+
+        buses:
+            messenger.bus.default: []
+
+        routing:
+            # In dev we send emails synchronously so the user gets the
+            # verification link immediately. In production you would point
+            # this at an async transport and run `bin/console messenger:consume`.
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
+            Symfony\Component\Notifier\Message\ChatMessage: sync
+            Symfony\Component\Notifier\Message\SmsMessage: sync
+
+            # Route your messages to the transports
+            # 'App\Message\YourMessage': async

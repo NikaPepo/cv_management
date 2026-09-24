@@ -1,0 +1,56 @@
+services:
+  app:
+    user: "1000:1000"
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - '.:/var/www'
+    networks:
+      - app
+    depends_on:
+      - postgres
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '${APP_PORT:-8080}:80'
+    volumes:
+      - .:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d/
+    networks:
+      - app
+  postgres:
+      image: postgres:18-alpine
+      ports:
+          - '${FORWARD_DB_PORT:-5432}:5432'
+      environment:
+          POSTGRES_DB: '${DB_DATABASE}'
+          POSTGRES_USER: '${DB_USERNAME}'
+          POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      volumes:
+          - postgres:/var/lib/postgresql
+      networks:
+          - app
+      healthcheck:
+          test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}']
+          retries: 3
+          timeout: 5s
+  node:
+    image: node:22
+    ports:
+      - '${VITE_PORT:-5173}:5173'
+    working_dir: /var/www/frontend
+    volumes:
+      - .:/var/www
+    networks:
+      - app
+    tty: true
+networks:
+  app:
+    driver: bridge
+volumes:
+  postgres:
+    driver: local
+

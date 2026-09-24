@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+        mailer.from_address: '%env(MAILER_FROM_ADDRESS)%'
+        mailer.from_name: '%env(MAILER_FROM_NAME)%'
+        cloudinary.cloud_name: '%env(CLOUDINARY_CLOUD_NAME)%'
+        cloudinary.api_key: '%env(CLOUDINARY_API_KEY)%'
+        cloudinary.api_secret: '%env(CLOUDINARY_API_SECRET)%'
+        app.frontend_url: '%env(FRONTEND_URL)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+    App\Security\EmailVerifier:
+        arguments:
+            $mailerFromAddress: '%mailer.from_address%'
+            $mailerFromName: '%mailer.from_name%'
+    App\Security\OAuthSuccessHandler:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+    App\Controller\ResetPasswordController:
+        arguments:
+            $mailerFromAddress: '%mailer.from_address%'
+            $mailerFromName: '%mailer.from_name%'
+            $frontendUrl: '%app.frontend_url%'
+    App\Controller\RegistrationController:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+    App\Service\CloudinaryUploader:
+        arguments:
+            $cloudName: '%cloudinary.cloud_name%'
+            $apiKey: '%cloudinary.api_key%'
+            $apiSecret: '%cloudinary.api_secret%'
+    App\Service\CloudinarySignatureService:
+        arguments:
+            $cloudName: '%cloudinary.cloud_name%'
+            $apiKey: '%cloudinary.api_key%'
+            $apiSecret: '%cloudinary.api_secret%'
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
