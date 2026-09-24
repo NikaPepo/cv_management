@@ -83,7 +83,10 @@ php bin/console cache:warm --no-interaction --env=prod \
 # env vars can be safely deleted from the Render dashboard.
 if [[ -n "${ADMIN_BOOTSTRAP_EMAIL:-}" && -n "${ADMIN_BOOTSTRAP_PASSWORD:-}" ]]; then
     echo "[entrypoint] Bootstrapping admin from env vars..."
-    if php bin/console app:create-admin --no-interaction; then
+    if php bin/console app:create-admin \
+            "$ADMIN_BOOTSTRAP_EMAIL" \
+            "$ADMIN_BOOTSTRAP_PASSWORD" \
+            --no-interaction; then
         echo "[entrypoint] Admin bootstrap OK."
     else
         echo "[entrypoint] WARNING: Admin bootstrap returned non-zero; continuing."
