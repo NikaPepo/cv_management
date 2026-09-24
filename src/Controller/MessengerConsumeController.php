@@ -32,7 +32,7 @@ final class MessengerConsumeController
      * Bounded by the cron.org timeout and Render's HTTP request budget.
      * 45s leaves comfortable headroom for transport overhead.
      */
-    private const CONSUME_TIME_LIMIT_SECONDS = 45;
+    private const CONSUME_TIME_LIMIT_SECONDS = 20;
 
     public function __construct(
         private readonly MessengerConsumeService $service,
