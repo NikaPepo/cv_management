@@ -13,6 +13,7 @@ parameters:
         cloudinary.api_key: '%env(CLOUDINARY_API_KEY)%'
         cloudinary.api_secret: '%env(CLOUDINARY_API_SECRET)%'
         app.frontend_url: '%env(FRONTEND_URL)%'
+        messenger.cron_token: '%env(MESSENGER_CRON_TOKEN)%'
 
 services:
     # default configuration for services in *this* file
@@ -49,5 +50,13 @@ services:
             $cloudName: '%cloudinary.cloud_name%'
             $apiKey: '%cloudinary.api_key%'
             $apiSecret: '%cloudinary.api_secret%'
+    App\Service\MessengerConsumeService:
+        # TransportInterface for the `async` transport is not autowireable
+        # by interface — wire it explicitly via service ID.
+        arguments:
+            $asyncTransport: '@messenger.transport.async'
+    App\Controller\MessengerConsumeController:
+        arguments:
+            $cronToken: '%messenger.cron_token%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

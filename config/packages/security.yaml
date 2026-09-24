@@ -19,6 +19,14 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+        # Machine-to-machine endpoint hit by cron.org. Matched BEFORE
+        # `main` so Symfony's session-based firewall does not try to
+        # load an anonymous token for the cron worker. Authorization
+        # for this route is handled inside the controller via the
+        # `MESSENGER_CRON_TOKEN` Bearer header.
+        messenger_cron:
+            pattern: ^/messenger/consume$
+            security: false
         main:
             lazy: true
             provider: app_user_provider
