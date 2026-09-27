@@ -3,8 +3,10 @@ import { useParams } from 'react-router-dom'
 import { Alert, Button, Spinner, Table } from 'react-bootstrap'
 import { cvApi, type CvView } from '../api/cvs'
 import Markdown from '../components/Markdown'
+import { useT } from '../contexts/AppPreferencesContext'
 
 export default function PositionCvsPage() {
+    const { t, tArg } = useT()
     const { id } = useParams<{ id: string }>()
     const [rows, setRows] = useState<CvView[]>([])
     const [positionTitle, setPositionTitle] = useState('')
@@ -22,15 +24,15 @@ export default function PositionCvsPage() {
             } catch (e: unknown) {
                 const status = (e as { response?: { status?: number } })?.response?.status
                 if (status === 403) {
-                    setError('Only recruiters may browse CVs.')
+                    setError(t('cv_position.error.only_recruiters'))
                 } else {
-                    setError((e as Error).message)
+                    setError(t('error.generic'))
                 }
             } finally {
                 setLoading(false)
             }
         })()
-    }, [id])
+    }, [id, t])
 
     if (loading) return <Spinner animation="border" />
     if (error !== '') return <Alert variant="danger">{error}</Alert>
@@ -41,15 +43,15 @@ export default function PositionCvsPage() {
     if (rows.length === 0) {
         return (
             <div>
-                <h1 className="mb-3">CVs — {positionTitle}</h1>
-                <div className="text-muted">No published CVs yet for this position.</div>
+                <h1 className="mb-3">{tArg('cv_position.title', { title: positionTitle })}</h1>
+                <div className="text-muted">{t('cv_position.empty')}</div>
             </div>
         )
     }
 
     return (
         <div>
-            <h1 className="mb-3">CVs — {positionTitle}</h1>
+            <h1 className="mb-3">{tArg('cv_position.title', { title: positionTitle })}</h1>
 
             {selected.length > 0 && (
                 <div className="alert alert-secondary d-flex justify-content-between align-items-center">
@@ -64,7 +66,7 @@ export default function PositionCvsPage() {
                                     if (cv !== undefined) setPreview(cv)
                                 }}
                             >
-                                Preview selected
+                                {t('cv_position.preview_selected')}
                             </Button>
                         )}
                     </div>
@@ -75,10 +77,10 @@ export default function PositionCvsPage() {
                 <thead>
                     <tr>
                         <th style={{ width: 40 }}>☑</th>
-                        <th>Candidate</th>
-                        <th>Likes</th>
-                        <th>Published</th>
-                        <th>Empty attrs</th>
+                        <th>{t('cv_position.col.candidate')}</th>
+                        <th>{t('cv_position.col.likes')}</th>
+                        <th>{t('cv_position.col.published')}</th>
+                        <th>{t('cv_position.col.empty_attrs')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,14 +130,14 @@ export default function PositionCvsPage() {
                                 <Table size="sm" className="mb-3">
                                     <tbody>
                                         {preview.attributes.map((a) => (
-                                            <tr key={a.attributeDefinitionId} className={a.empty ? 'table-danger' : ''}>
+                                            <tr key={a.attributeDefinitionId} className={a.empty ? 'bg-danger-subtle text-danger-emphasis' : ''}>
                                                 <td className="fw-semibold">{a.name}</td>
-                                                <td>{a.empty ? 'Empty' : String(a.value ?? '—')}</td>
+                                                <td>{a.empty ? t('cv_position.attr.empty_label') : String(a.value ?? '—')}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </Table>
-                                <h6>Projects</h6>
+                                <h6>{t('cv_position.preview.projects')}</h6>
                                 {preview.projects.map((p) => (
                                     <div key={p.id} className="mb-2">
                                         <strong>{p.name}</strong>

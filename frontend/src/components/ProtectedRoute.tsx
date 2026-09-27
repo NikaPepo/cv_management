@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { type ReactNode } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
 interface Props {
     children: ReactNode
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, roles }: Props) {
+    const { t } = useT()
     const { user, loading, hasRole } = useAuth()
 
     if (loading) return <div className="container py-5">…</div>
@@ -17,7 +19,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
     if (roles && !hasRole(...roles)) {
         return (
             <div className="container py-5">
-                <div className="alert alert-danger">Forbidden.</div>
+                <div className="alert alert-danger">{t('admin.forbidden')}</div>
             </div>
         )
     }

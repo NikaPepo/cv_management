@@ -6,6 +6,52 @@ body,
     min-height: 100%;
 }
 
-body {
-    background-color: #f8f9fa;
+/* ---------------------------------------------------------------------
+ * App-wide Bootstrap variable overrides.
+ *
+ * Bootstrap 5.3 already wires [data-bs-theme="dark"] on <html> /
+ * Layout root in AppPreferencesContext + Layout.tsx, and its body rule
+ * reads `background-color: var(--bs-body-bg)`. The two blocks below
+ * only retune the palette; they never touch layout, sizing, spacing,
+ * or JSX.
+ *
+ *   - Light: keep the existing slightly off-white body (instead of
+ *     Bootstrap's default #fff), so the light theme looks identical
+ *     to before this change.
+ *   - Dark:  warmer charcoal instead of Bootstrap's cold #212529 /
+ *     #dee2e6 default. Text is soft beige-toned, not pure white.
+ *     Secondary and tertiary surfaces lift a couple of shades above
+ *     the body so cards, drop-downs, headers, footers stay readable.
+ * --------------------------------------------------------------------- */
+:root,
+[data-bs-theme="light"] {
+    --bs-body-bg: #f8f9fa;
+}
+
+[data-bs-theme="dark"] {
+    /* Warm charcoal base — visibly darker than the body, soft rather
+       than pure #000. */
+    --bs-body-bg: #1A1816;
+    --bs-secondary-bg: #211E1B; /* cards, dropdowns — just above body */
+    --bs-tertiary-bg: #292521;  /* headers, footers, table stripes */
+
+    /* Text — soft warm light, never #fff. */
+    --bs-body-color: #E5E1DC;
+    --bs-emphasis-color: #F4F0EC;
+    --bs-secondary-color: rgba(229, 225, 220, 0.75);
+    --bs-tertiary-color: rgba(229, 225, 220, 0.5);
+
+    /* Borders — visible but quiet. Translucent variant warms up
+       Bootstrap's default rgba(255,255,255,0.15). */
+    --bs-border-color: #3A3633;
+    --bs-border-color-translucent: rgba(245, 240, 232, 0.12);
+
+    /* Bootstrap 5.3 does NOT redefine --bs-light inside
+       [data-bs-theme="dark"], which leaves .bg-light as #f8f9fa and
+       creates light boxes in dark mode at call sites such as
+       InfoSection.tsx and CvDetailPage.tsx. Re-bind --bs-light to a
+       warm dark surface so those .bg-light call sites become
+       theme-aware without changing the JSX. */
+    --bs-light: #2D2A26;
+    --bs-light-rgb: 45, 42, 38;
 }

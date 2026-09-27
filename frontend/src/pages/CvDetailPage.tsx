@@ -4,8 +4,10 @@ import { Alert, Button, Form, Spinner, Table } from 'react-bootstrap'
 import { cvApi, type CvAttributeValue, type CvView } from '../api/cvs'
 import Markdown from '../components/Markdown'
 import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
 export default function CvDetailPage() {
+    const { t, tPlural } = useT()
     const { id } = useParams<{ id: string }>()
     const { hasRole } = useAuth()
     const navigate = useNavigate()
@@ -28,11 +30,11 @@ export default function CvDetailPage() {
         } catch (e: unknown) {
             const status = (e as { response?: { status?: number } })?.response?.status
             if (status === 403) {
-                setError('You have lost access to this position.')
+                setError(t('cv_detail.error.lost_access'))
             } else if (status === 404) {
-                setError('CV not found.')
+                setError(t('cv_detail.error.not_found'))
             } else {
-                setError((e as Error).message)
+                setError(t('cv_detail.error.generic'))
             }
         } finally {
             setLoading(false)
@@ -51,7 +53,7 @@ export default function CvDetailPage() {
             await refresh()
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-            setError(msg ?? 'Publish failed.')
+            setError(msg ?? t('cv_detail.publish.failed'))
         } finally {
             setActionBusy(false)
         }
@@ -59,7 +61,7 @@ export default function CvDetailPage() {
 
     const onDelete = async () => {
         if (view === null) return
-        if (!window.confirm('Delete this CV?')) return
+        if (!window.confirm(t('cv_detail.action.delete_confirm'))) return
         await cvApi.remove(view.cv.id)
         navigate('/profile?tab=cvs')
     }
@@ -81,10 +83,10 @@ export default function CvDetailPage() {
         } catch (e: unknown) {
             const status = (e as { response?: { status?: number } })?.response?.status
             if (status === 409) {
-                setError('This value was changed in another session. Please reload.')
+                setError(t('cv_detail.save.conflict'))
             } else {
                 const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-                setError(msg ?? 'Save failed.')
+                setError(msg ?? t('cv_detail.save.failed'))
             }
         }
     }
@@ -138,14 +140,14 @@ export default function CvDetailPage() {
                             isPublished ? 'text-bg-success' : 'text-bg-secondary'
                         }`}
                     >
-                        {view.cv.status}
+                        {t(`status.${view.cv.status.toLowerCase()}` as 'status.draft')}
                     </span>
                     {canEdit && (
                         <Button
                             onClick={() => void onPublish()}
                             disabled={actionBusy || view.hasUnpublishedRequired}
                         >
-                            Publish
+                            {t('cv_detail.action.publish')}
                         </Button>
                     )}
                     {isStaff && isPublished && (
@@ -153,12 +155,12 @@ export default function CvDetailPage() {
                             variant={view.hasLiked ? 'warning' : 'outline-warning'}
                             onClick={() => void onLikeToggle()}
                         >
-                            {view.hasLiked ? '★ Liked' : '☆ Like'} ({view.likeCount})
+                            {view.hasLiked ? t('cv_detail.action.liked') : t('cv_detail.action.like')} ({view.likeCount})
                         </Button>
                     )}
                     {isOwner && (
                         <Button variant="outline-danger" onClick={() => void onDelete()}>
-                            Delete
+                            {t('cv_detail.action.delete')}
                         </Button>
                     )}
                 </div>
@@ -166,13 +168,12 @@ export default function CvDetailPage() {
 
             {canEdit && view.hasUnpublishedRequired && (
                 <Alert variant="warning">
-                    Some required attributes are missing.
-                    Complete them before publishing this CV.
+                    {t('cv_detail.warn.required_missing')}
                 </Alert>
             )}
 
             <section className="mb-4">
-                <h3 className="mb-3">About the candidate</h3>
+                <h3 className="mb-3">{t('cv_detail.about')}</h3>
                 <div className="d-flex gap-3 align-items-center">
                     {view.candidate.photoUrl !== null && (
                         <img
@@ -197,14 +198,14 @@ export default function CvDetailPage() {
                 </div>
                 {isOwner && (
                     <div className="mt-2 small">
-                        <Link to="/profile">Edit profile</Link>
+                        <Link to="/profile">{t('cv_detail.edit_profile')}</Link>
                     </div>
                 )}
             </section>
 
             <section className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h3 className="mb-0">Attributes</h3>
+                    <h3 className="mb-0">{t('cv_detail.attributes.title')}</h3>
                     {canEdit &&
                         (editMode ? (
                             <Button
@@ -216,7 +217,7 @@ export default function CvDetailPage() {
                                     clearAttrSelection()
                                 }}
                             >
-                                Done editing
+                                {t('cv_detail.action.done_editing')}
                             </Button>
                         ) : (
                             <Button
@@ -224,7 +225,7 @@ export default function CvDetailPage() {
                                 size="sm"
                                 onClick={() => setEditMode(true)}
                             >
-                                Edit attributes
+                                {t('cv_detail.action.edit_attributes')}
                             </Button>
                         ))}
                 </div>
@@ -232,10 +233,12 @@ export default function CvDetailPage() {
                     <div className="d-flex justify-content-between align-items-center mb-2 p-2 border rounded bg-light">
                         <small className="text-muted">
                             {selectedAttrIds.size === 0
-                                ? 'Select one row to edit it.'
-                                : selectedAttrIds.size === 1
-                                  ? '1 selected.'
-                                  : `${selectedAttrIds.size} selected — edit one at a time.`}
+                                ? t('cv_detail.attributes.edit_hint.zero')
+                                : tPlural(
+                                      'cv_detail.attributes.edit_hint',
+                                      selectedAttrIds.size,
+                                      { count: selectedAttrIds.size },
+                                  )}
                         </small>
                         <div className="d-flex gap-2">
                             {selectedAttrIds.size > 0 && (
@@ -244,7 +247,7 @@ export default function CvDetailPage() {
                                     size="sm"
                                     onClick={clearAttrSelection}
                                 >
-                                    Clear
+                                    {t('cv_detail.attributes.clear')}
                                 </Button>
                             )}
                             <Button
@@ -253,7 +256,7 @@ export default function CvDetailPage() {
                                 onClick={editSelectedAttribute}
                                 disabled={selectedAttrIds.size !== 1}
                             >
-                                Edit selected
+                                {t('cv_detail.attributes.edit_selected')}
                             </Button>
                         </div>
                     </div>
@@ -262,10 +265,10 @@ export default function CvDetailPage() {
                     <thead>
                         <tr>
                             {editMode && canEdit && (
-                                <th style={{ width: 40 }} aria-label="Select" />
+                                <th style={{ width: 40 }} aria-label={t('cv_detail.attributes.aria.select')} />
                             )}
-                            <th style={{ width: '35%' }}>Attribute</th>
-                            <th>Value</th>
+                            <th style={{ width: '35%' }}>{t('cv_detail.attributes.col.attribute')}</th>
+                            <th>{t('cv_detail.attributes.col.value')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -275,14 +278,14 @@ export default function CvDetailPage() {
                                     colSpan={editMode && canEdit ? 3 : 2}
                                     className="text-muted text-center py-3"
                                 >
-                                    No attributes configured for this position.
+                                    {t('cv_detail.attributes.empty')}
                                 </td>
                             </tr>
                         ) : (
                             view.attributes.map((attr) => (
                                 <tr
                                     key={attr.attributeDefinitionId}
-                                    className={attr.empty ? 'table-warning' : ''}
+                                    className={attr.empty ? 'bg-warning-subtle text-warning-emphasis' : ''}
                                 >
                                     {editMode && canEdit && (
                                         <td>
@@ -322,7 +325,7 @@ export default function CvDetailPage() {
                                             )}
                                         </label>
                                     </td>
-                                    <td>{renderAttributeValue(attr)}</td>
+                                    <td>{renderAttributeValue(attr, t)}</td>
                                 </tr>
                             ))
                         )}
@@ -331,23 +334,23 @@ export default function CvDetailPage() {
             </section>
 
             <section className="mb-4">
-                <h3 className="mb-2">Projects</h3>
+                <h3 className="mb-2">{t('cv_detail.projects.title')}</h3>
                 {view.projects.length === 0 ? (
                     <div className="text-muted">
-                        No matching projects.{' '}
+                        {t('cv_detail.projects.empty')}{' '}
                         {isOwner ? (
-                            <Link to="/profile">Add some in your profile</Link>
+                            <Link to="/profile">{t('cv_detail.projects.add_link')}</Link>
                         ) : (
-                            'The candidate has no projects that match this position.'
+                            t('cv_detail.projects.candidate_empty')
                         )}
                     </div>
                 ) : (
                     <Table hover responsive className="align-middle">
                         <thead>
                             <tr>
-                                <th>Project</th>
-                                <th>Technologies</th>
-                                <th style={{ width: 200 }}>Period</th>
+                                <th>{t('cv_detail.projects.col.project')}</th>
+                                <th>{t('cv_detail.projects.col.technologies')}</th>
+                                <th style={{ width: 200 }}>{t('cv_detail.projects.col.period')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -404,10 +407,10 @@ export default function CvDetailPage() {
  * the option *value* (string, not id) for one_of_many, so a plain
  * String() is correct there.
  */
-function renderAttributeValue(attr: CvAttributeValue): React.ReactNode {
+function renderAttributeValue(attr: CvAttributeValue, t: (key: string) => string): React.ReactNode {
     if (attr.empty) {
         return (
-            <span className="text-muted fst-italic">Not specified</span>
+            <span className="text-muted fst-italic">{t('cv_detail.attr_value.not_specified')}</span>
         )
     }
     const { dataType, value } = attr
@@ -422,7 +425,7 @@ function renderAttributeValue(attr: CvAttributeValue): React.ReactNode {
         )
     }
     if (dataType === 'boolean') {
-        return value ? 'Yes' : 'No'
+        return value ? t('cv_detail.attr_value.yes') : t('cv_detail.attr_value.no')
     }
     if (dataType === 'one_of_many' && typeof value === 'string') {
         // Backend already gives us the option label; just show it.
@@ -442,6 +445,7 @@ interface EditorProps {
 }
 
 function AttributeValueEditor({ attr, onCancel, onSave }: EditorProps) {
+    const { t } = useT()
     const [draft, setDraft] = useState<unknown>(attr.value ?? defaultFor(attr.dataType))
 
     return (
@@ -451,7 +455,7 @@ function AttributeValueEditor({ attr, onCancel, onSave }: EditorProps) {
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title">{attr.name}</h5>
-                            <button className="btn-close" onClick={onCancel} aria-label="Close" />
+                            <button className="btn-close" onClick={onCancel} aria-label={t('cv_detail.attr_value.modal_aria_close')} />
                         </div>
                         <div className="modal-body">
                             {attr.description !== '' && (
@@ -466,10 +470,10 @@ function AttributeValueEditor({ attr, onCancel, onSave }: EditorProps) {
                         </div>
                         <div className="modal-footer">
                             <Button variant="secondary" onClick={onCancel}>
-                                Cancel
+                                {t('cv_detail.attr_value.modal_cancel')}
                             </Button>
                             <Button variant="primary" onClick={() => onSave(buildPayload(attr, draft))}>
-                                Save
+                                {t('cv_detail.attr_value.modal_save')}
                             </Button>
                         </div>
                     </div>

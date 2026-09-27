@@ -27,7 +27,7 @@ export default function RegisterPage() {
             navigate('/', { replace: true })
         } catch (e: unknown) {
             const data = (e as { response?: { data?: { error?: string } } })?.response?.data
-            setError(data?.error ?? 'Registration failed.')
+            setError(data?.error ?? t('auth.register.failed'))
         } finally {
             setLoading(false)
         }
@@ -42,7 +42,7 @@ export default function RegisterPage() {
                             <h1 className="text-center mb-4">{t('nav.register')}</h1>
                             <Form onSubmit={submit}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Email</Form.Label>
+                                    <Form.Label>{t('auth.register.email_label')}</Form.Label>
                                     <Form.Control
                                         type="email"
                                         value={email}
@@ -52,7 +52,7 @@ export default function RegisterPage() {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Password</Form.Label>
+                                    <Form.Label>{t('auth.register.password_label')}</Form.Label>
                                     <Form.Control
                                         type="password"
                                         minLength={8}
@@ -63,13 +63,13 @@ export default function RegisterPage() {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3">
-                                    <Form.Label>Account type</Form.Label>
+                                    <Form.Label>{t('auth.register.account_type_label')}</Form.Label>
                                     <Form.Select
                                         value={accountType}
                                         onChange={(e) => setAccountType(e.target.value as AccountType)}
                                     >
-                                        <option value="candidate">Candidate</option>
-                                        <option value="recruiter">Recruiter</option>
+                                        <option value="candidate">{t('role.candidate')}</option>
+                                        <option value="recruiter">{t('role.recruiter')}</option>
                                     </Form.Select>
                                 </Form.Group>
 

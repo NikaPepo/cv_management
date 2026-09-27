@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button, Form, Table } from 'react-bootstrap'
 import api from '../api/axios'
 import { useAuth } from '../contexts/AuthContext'
-import { useTranslation } from '../contexts/AppPreferencesContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
 interface AdminUser {
     id: number
@@ -13,7 +13,7 @@ interface AdminUser {
 }
 
 export default function AdminPage() {
-    const t = useTranslation()
+    const { t, tArg, tPlural } = useT()
     const { hasRole } = useAuth()
     const [items, setItems] = useState<AdminUser[]>([])
     const [page, setPage] = useState(1)
@@ -22,7 +22,7 @@ export default function AdminPage() {
     const [error] = useState('')
 
     if (!hasRole('ROLE_ADMIN')) {
-        return <div className="alert alert-danger">Forbidden.</div>
+        return <div className="alert alert-danger">{t('admin.forbidden')}</div>
     }
 
     const refresh = async (p: number) => {
@@ -59,7 +59,7 @@ export default function AdminPage() {
     }
 
     const bulkDelete = async () => {
-        if (!window.confirm(`Delete ${selected.length} user(s)?`)) return
+        if (!window.confirm(tPlural('admin.delete.confirm', selected.length, { count: selected.length }))) return
         await Promise.all(
             selected.map((id) => api.delete(`/api/admin/users/${id}`).catch(() => {}))
         )
@@ -73,25 +73,25 @@ export default function AdminPage() {
 
             {selected.length > 0 && (
                 <div className="alert alert-secondary d-flex justify-content-between align-items-center">
-                    <span>{selected.length} selected</span>
+                    <span>{tPlural('admin.selected_count', selected.length, { count: selected.length })}</span>
                     <div className="d-flex gap-2 flex-wrap">
                         <Button size="sm" variant="outline-secondary" onClick={() => void bulkBlock(true)}>
-                            Block selected
+                            {t('admin.block_selected')}
                         </Button>
                         <Button size="sm" variant="outline-success" onClick={() => void bulkBlock(false)}>
-                            Unblock selected
+                            {t('admin.unblock_selected')}
                         </Button>
                         <Button size="sm" variant="outline-primary" onClick={() => void bulkRole('admin')}>
-                            Promote to admin
+                            {t('admin.promote_admin')}
                         </Button>
                         <Button size="sm" variant="outline-primary" onClick={() => void bulkRole('recruiter')}>
-                            Set as recruiter
+                            {t('admin.set_recruiter')}
                         </Button>
                         <Button size="sm" variant="outline-primary" onClick={() => void bulkRole('candidate')}>
-                            Set as candidate
+                            {t('admin.set_candidate')}
                         </Button>
                         <Button size="sm" variant="danger" onClick={() => void bulkDelete()}>
-                            Delete selected
+                            {t('admin.delete_selected')}
                         </Button>
                     </div>
                 </div>
@@ -103,10 +103,10 @@ export default function AdminPage() {
                 <thead>
                     <tr>
                         <th style={{ width: 40 }}>☑</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Verified</th>
-                        <th>Blocked</th>
+                        <th>{t('admin.col.email')}</th>
+                        <th>{t('admin.col.role')}</th>
+                        <th>{t('admin.col.verified')}</th>
+                        <th>{t('admin.col.blocked')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,9 +133,9 @@ export default function AdminPage() {
                                         void bulkRole(e.target.value as 'candidate' | 'recruiter' | 'admin')
                                     }
                                 >
-                                    <option value="candidate">Candidate</option>
-                                    <option value="recruiter">Recruiter</option>
-                                    <option value="admin">Admin</option>
+                                    <option value="candidate">{t('role.candidate')}</option>
+                                    <option value="recruiter">{t('role.recruiter')}</option>
+                                    <option value="admin">{t('role.admin')}</option>
                                 </Form.Select>
                             </td>
                             <td>{u.isVerified ? '✓' : '✗'}</td>
@@ -146,7 +146,7 @@ export default function AdminPage() {
             </Table>
 
             <div className="d-flex justify-content-between">
-                <span className="text-muted">Total: {total}</span>
+                <span className="text-muted">{tArg('admin.total', { count: total })}</span>
                 <div className="d-flex gap-2">
                     <Button
                         variant="secondary"

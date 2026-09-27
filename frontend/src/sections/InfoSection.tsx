@@ -7,7 +7,7 @@ import type {
     DataType,
     ProfileAttributeRow,
 } from '../types'
-import { useTranslation } from '../contexts/AppPreferencesContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'conflict' | 'error'
 
@@ -30,7 +30,7 @@ interface PendingAttribute {
 }
 
 export default function InfoSection() {
-    const t = useTranslation()
+    const { t, tPlural } = useT()
     const [rows, setRows] = useState<ProfileAttributeRow[]>([])
     const [pending, setPending] = useState<PendingAttribute[]>([])
     const [definitions, setDefinitions] = useState<Map<number, AttributeDefinition>>(
@@ -123,7 +123,7 @@ export default function InfoSection() {
         if (total === 0) return
         if (
             !window.confirm(
-                `Remove ${total} attribute${total === 1 ? '' : 's'} from your profile?`,
+                tPlural('info.delete.confirm', total, { count: total }),
             )
         ) {
             return
@@ -233,7 +233,7 @@ export default function InfoSection() {
     return (
         <div className="row">
             <div className="col-lg-7">
-                <h3>Information</h3>
+                <h3>{t('profile.info.title')}</h3>
                 {addError !== '' && (
                     <Alert variant="danger" onClose={() => setAddError('')} dismissible>
                         {addError}
@@ -243,7 +243,7 @@ export default function InfoSection() {
                     <Spinner animation="border" />
                 ) : formIsEmpty ? (
                     <div className="text-muted">
-                        No attributes yet. Add some from the picker on the right.
+                        {t('editor.attributes.empty')} {t('info.picker_hint')}
                     </div>
                 ) : (
                     <Form>
@@ -251,8 +251,8 @@ export default function InfoSection() {
                             <div className="d-flex justify-content-between align-items-center mb-3 p-2 border rounded bg-light">
                                 <small className="text-muted">
                                     {selectedIds.size === 0
-                                        ? 'Select rows to enable actions.'
-                                        : `${selectedIds.size} selected.`}
+                                        ? t('info.selection_hint.zero')
+                                        : tPlural('info.selection_hint', selectedIds.size, { count: selectedIds.size })}
                                 </small>
                                 <div className="d-flex gap-2">
                                     {selectedIds.size > 0 && (
@@ -262,7 +262,7 @@ export default function InfoSection() {
                                             onClick={clearSelection}
                                             disabled={actionBusy}
                                         >
-                                            Clear
+                                            {t('cv_detail.attributes.clear')}
                                         </Button>
                                     )}
                                     <Button
@@ -271,7 +271,7 @@ export default function InfoSection() {
                                         onClick={() => void removeSelected()}
                                         disabled={selectedIds.size === 0 || actionBusy}
                                     >
-                                        Remove selected
+                                        {t('info.remove_selected')}
                                     </Button>
                                 </div>
                             </div>
@@ -465,6 +465,7 @@ interface AttributeFormFieldProps {
 }
 
 function AttributeFormField({ row, definition, onSaved }: AttributeFormFieldProps) {
+    const { t } = useT()
     const [draft, setDraft] = useState<unknown>(
         initialDraftFor(definition.dataType, row.value, definition),
     )
@@ -529,10 +530,10 @@ function AttributeFormField({ row, definition, onSaved }: AttributeFormFieldProp
             <div className="mt-1">
                 <small>
                     {status === 'saving' && (
-                        <span className="text-muted">Saving…</span>
+                        <span className="text-muted">{t('info.status.saving')}</span>
                     )}
                     {status === 'saved' && (
-                        <span className="text-success">Saved</span>
+                        <span className="text-success">{t('info.status.saved')}</span>
                     )}
                     {status === 'conflict' && (
                         <span className="text-warning">{statusMsg}</span>
@@ -562,6 +563,7 @@ interface PendingAttributeFieldProps {
 }
 
 function PendingAttributeField({ definition, onPromoted }: PendingAttributeFieldProps) {
+    const { t } = useT()
     const [draft, setDraft] = useState<unknown>(
         initialDraftFor(definition.dataType, null, definition),
     )
@@ -607,10 +609,10 @@ function PendingAttributeField({ definition, onPromoted }: PendingAttributeField
             <div className="mt-1">
                 <small>
                     {status === 'saving' && (
-                        <span className="text-muted">Saving…</span>
+                        <span className="text-muted">{t('info.status.saving')}</span>
                     )}
                     {status === 'idle' && (
-                        <span className="text-muted">Not saved yet — pick a value.</span>
+                        <span className="text-muted">{t('info.status.not_saved')}</span>
                     )}
                     {status === 'error' && (
                         <span className="text-danger">{statusMsg}</span>
@@ -673,6 +675,7 @@ function TypedInput({
     onChange,
     onBlur,
 }: TypedInputProps) {
+    const { t } = useT()
     switch (dataType) {
         case 'string':
             return (
@@ -721,7 +724,7 @@ function TypedInput({
             return (
                 <div className="row g-2">
                     <div className="col-6">
-                        <Form.Label className="small text-muted mb-1">From</Form.Label>
+                        <Form.Label className="small text-muted mb-1">{t('info.label.from')}</Form.Label>
                         <Form.Control
                             type="date"
                             value={v.start ?? ''}
@@ -735,7 +738,7 @@ function TypedInput({
                         />
                     </div>
                     <div className="col-6">
-                        <Form.Label className="small text-muted mb-1">To</Form.Label>
+                        <Form.Label className="small text-muted mb-1">{t('info.label.to')}</Form.Label>
                         <Form.Control
                             type="date"
                             value={v.end ?? ''}
@@ -763,7 +766,7 @@ function TypedInput({
             return (
                 <Form.Control
                     type="url"
-                    placeholder="https://res.cloudinary.com/…"
+                    placeholder={t('info.placeholder.cloudinary')}
                     value={(value as string | null) ?? ''}
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={onBlur}

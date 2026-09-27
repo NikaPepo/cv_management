@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Form } from 'react-bootstrap'
 import { projectApi } from '../api/projects'
+import { useT } from '../contexts/AppPreferencesContext'
 
 interface Props {
     value: string[]
@@ -14,6 +15,7 @@ interface Props {
  * the input can be safely case-insensitive: we lowercase before sending.
  */
 export default function TagInput({ value, onChange, placeholder }: Props) {
+    const { t } = useT()
     const [draft, setDraft] = useState('')
     const [suggestions, setSuggestions] = useState<{ id: number; name: string }[]>([])
     const [open, setOpen] = useState(false)
@@ -76,7 +78,7 @@ export default function TagInput({ value, onChange, placeholder }: Props) {
                         <button
                             type="button"
                             className="btn-close btn-close-white btn-close-sm"
-                            aria-label="Remove"
+                            aria-label={t('tag_input.aria.remove')}
                             style={{ fontSize: 10 }}
                             onClick={() => onChange(value.filter((t) => t !== tag))}
                         />
@@ -87,7 +89,7 @@ export default function TagInput({ value, onChange, placeholder }: Props) {
                     size="sm"
                     className="flex-grow-1"
                     style={{ minWidth: 100, border: 'none', boxShadow: 'none' }}
-                    placeholder={placeholder ?? 'Add tag…'}
+                    placeholder={placeholder ?? t('tag_input.placeholder')}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={onKey}

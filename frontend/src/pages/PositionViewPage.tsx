@@ -5,10 +5,12 @@ import { positionApi, type Position } from '../api/positions'
 import { cvApi } from '../api/cvs'
 import Discussion from '../components/Discussion'
 import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
 type Tab = 'details' | 'discussion'
 
 export default function PositionViewPage() {
+    const { t } = useT()
     const { hasRole, user } = useAuth()
     const navigate = useNavigate()
     const { id } = useParams<{ id: string }>()
@@ -26,13 +28,13 @@ export default function PositionViewPage() {
             try {
                 const data = await positionApi.get(Number(id))
                 setPosition(data)
-            } catch (e: unknown) {
-                setError((e as Error).message)
+            } catch {
+                setError(t('error.generic'))
             } finally {
                 setLoading(false)
             }
         })()
-    }, [id])
+    }, [id, t])
 
     const onBuildCv = async () => {
         setBuilding(true)
@@ -41,7 +43,7 @@ export default function PositionViewPage() {
             navigate(`/cvs/${summary.id}`)
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-            setError(msg ?? 'Failed to build CV.')
+            setError(msg ?? t('view.error.build_failed'))
         } finally {
             setBuilding(false)
         }
@@ -61,17 +63,17 @@ export default function PositionViewPage() {
                 <div>
                     {isCandidate && position.accessible === true && (
                         <Button onClick={() => void onBuildCv()} disabled={building}>
-                            {building ? '…' : 'Build CV'}
+                            {building ? '…' : t('view.build_cv')}
                         </Button>
                     )}
                     {isStaff && (
                         <Link to={`/positions/${position.id}/cvs`} className="btn btn-outline-secondary me-2">
-                            Browse CVs
+                            {t('view.browse_cvs')}
                         </Link>
                     )}
                     {isStaff && (
                         <Link to={`/positions/${position.id}/edit`} className="btn btn-outline-secondary">
-                            Edit
+                            {t('view.edit')}
                         </Link>
                     )}
                 </div>
@@ -83,7 +85,7 @@ export default function PositionViewPage() {
                         className={`nav-link ${tab === 'details' ? 'active' : ''}`}
                         onClick={() => setTab('details')}
                     >
-                        Details
+                        {t('view.tab.details')}
                     </button>
                 </li>
                 <li className="nav-item">
@@ -91,7 +93,7 @@ export default function PositionViewPage() {
                         className={`nav-link ${tab === 'discussion' ? 'active' : ''}`}
                         onClick={() => setTab('discussion')}
                     >
-                        Discussion
+                        {t('view.tab.discussion')}
                     </button>
                 </li>
             </ul>
@@ -100,21 +102,21 @@ export default function PositionViewPage() {
                 <div>
                     <div className="mb-3">
                         {position.company !== null && <span className="badge text-bg-secondary me-2">{position.company}</span>}
-                        {position.level !== null && <span className="badge text-bg-info me-2">{position.level}</span>}
+                        {position.level !== null && <span className="badge text-bg-info me-2">{t(`level.${position.level}`)}</span>}
                         {position.isPublic ? (
-                            <span className="badge text-bg-success">public</span>
+                            <span className="badge text-bg-success">{t('access.public')}</span>
                         ) : (
-                            <span className="badge text-bg-warning">restricted</span>
+                            <span className="badge text-bg-warning">{t('access.restricted')}</span>
                         )}
                     </div>
 
                     <p>
-                        Max projects in CV: <strong>{position.maxProjects}</strong>
+                        {t('view.max_projects')} <strong>{position.maxProjects}</strong>
                     </p>
 
                     {position.projectTagFilter.length > 0 && (
                         <div className="mb-3">
-                            Project tags:{' '}
+                            {t('view.project_tags')}{' '}
                             {position.projectTagFilter.map((tag) => (
                                 <span key={tag} className="badge text-bg-primary me-1">
                                     {tag}
@@ -123,15 +125,15 @@ export default function PositionViewPage() {
                         </div>
                     )}
 
-                    <h3>Attributes</h3>
+                    <h3>{t('view.attributes.title')}</h3>
                     {position.attributes.length === 0 ? (
-                        <div className="text-muted">No attributes selected.</div>
+                        <div className="text-muted">{t('view.attributes.empty')}</div>
                     ) : (
                         <ul className="list-group mb-4">
                             {position.attributes.map((a) => (
                                 <li key={a.attributeDefinitionId} className="list-group-item d-flex justify-content-between">
                                     <span>{a.name}</span>
-                                    <small className="text-muted">{a.dataType}</small>
+                                    <small className="text-muted">{t(`data_type.${a.dataType}`)}</small>
                                 </li>
                             ))}
                         </ul>
@@ -139,11 +141,11 @@ export default function PositionViewPage() {
 
                     {position.accessRules !== undefined && position.accessRules.length > 0 && (
                         <>
-                            <h3>Access rules</h3>
+                            <h3>{t('view.access.title')}</h3>
                             <ul className="list-group">
                                 {position.accessRules.map((r, idx) => (
                                     <li key={idx} className="list-group-item">
-                                        <strong>{r.attributeName}</strong> {r.operator}{' '}
+                                        <strong>{r.attributeName}</strong> {t(`operator.${r.operator}`)}{' '}
                                         <code>{JSON.stringify(r.value)}</code>
                                     </li>
                                 ))}
@@ -153,7 +155,7 @@ export default function PositionViewPage() {
 
                     {position.accessible === false && (
                         <Alert variant="warning" className="mt-4">
-                            You don't currently satisfy this position's access rules.
+                            {t('view.access.warning')}
                         </Alert>
                     )}
                 </div>

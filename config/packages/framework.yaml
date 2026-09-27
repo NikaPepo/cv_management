@@ -5,6 +5,23 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    # On Render the TLS connection terminates at Render's edge, which forwards
+    # plain HTTP to the container together with X-Forwarded-* headers.
+    # Without trusted_proxies / trusted_hosts, Symfony's Request::isSecure()
+    # returns false and Request::getHttpHost() includes the internal nginx
+    # port (8080). That makes the OAuth redirect_uri look like
+    #   http://cv-management-8nf2.onrender.com:8080/login/check-google
+    # which does not match the URI registered in Google / Facebook consoles
+    # and causes `redirect_uri_mismatch`.
+    #
+    # Both values are read from env so the same image can target multiple
+    # environments (Render prod, staging, local) without code changes.
+    # Production values:
+    #   SYMFONY_TRUSTED_PROXIES=REMOTE_ADDR
+    #   SYMFONY_TRUSTED_HOSTS=cv-management-8nf2.onrender.com
+    trusted_proxies: '%env(SYMFONY_TRUSTED_PROXIES)%'
+    trusted_hosts:   '%env(SYMFONY_TRUSTED_HOSTS)%'
+
     #esi: true
     #fragments: true
 

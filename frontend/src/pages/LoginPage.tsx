@@ -40,7 +40,7 @@ export default function LoginPage() {
             await refresh()
             navigate('/', { replace: true })
         } catch {
-            setError('Invalid credentials.')
+            setError(t('auth.login.invalid_credentials'))
         } finally {
             setLoading(false)
         }
@@ -60,7 +60,7 @@ export default function LoginPage() {
                                     onClick={dismissUrlFlags}
                                     role="status"
                                 >
-                                    Email verified. You can sign in now.
+                                    {t('auth.login.verified_banner')}
                                 </div>
                             )}
 
@@ -70,13 +70,13 @@ export default function LoginPage() {
                                     onClick={dismissUrlFlags}
                                     role="alert"
                                 >
-                                    Verification link is invalid or expired: {verifyErrorReason}
+                                    {t('auth.login.verify_error_prefix')} {verifyErrorReason}
                                 </div>
                             )}
 
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group className="mb-3" controlId="loginEmail">
-                                    <Form.Label>Email</Form.Label>
+                                    <Form.Label>{t('auth.login.email_label')}</Form.Label>
                                     <Form.Control
                                         type="email"
                                         value={email}
@@ -85,7 +85,7 @@ export default function LoginPage() {
                                     />
                                 </Form.Group>
                                 <Form.Group className="mb-3" controlId="loginPassword">
-                                    <Form.Label>Password</Form.Label>
+                                    <Form.Label>{t('auth.login.password_label')}</Form.Label>
                                     <Form.Control
                                         type="password"
                                         value={password}
@@ -106,7 +106,7 @@ export default function LoginPage() {
                                 </Button>
                                 <div className="text-center mt-2">
                                     <Link to="/forgot-password" className="small">
-                                        Forgot password?
+                                        {t('auth.login.forgot_link')}
                                     </Link>
                                 </div>
                             </Form>

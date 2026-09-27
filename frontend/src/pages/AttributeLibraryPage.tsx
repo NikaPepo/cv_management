@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react'
 import { Button, Form, Modal, Table } from 'react-bootstrap'
 import { attributeApi, type CreateAttributePayload } from '../api/attributes'
 import type { AttributeCategory, AttributeDefinition, DataType } from '../types'
-import { useTranslation } from '../contexts/AppPreferencesContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
-const DATA_TYPES: { value: DataType; label: string }[] = [
-    { value: 'string', label: 'String' },
-    { value: 'text', label: 'Text (Markdown)' },
-    { value: 'image', label: 'Image' },
-    { value: 'numeric', label: 'Numeric' },
-    { value: 'date', label: 'Date' },
-    { value: 'period', label: 'Period' },
-    { value: 'boolean', label: 'Boolean' },
-    { value: 'one_of_many', label: 'One of many' },
+const DATA_TYPE_VALUES: DataType[] = [
+    'string',
+    'text',
+    'image',
+    'numeric',
+    'date',
+    'period',
+    'boolean',
+    'one_of_many',
 ]
 
 interface EditorState {
@@ -38,7 +38,7 @@ const EMPTY_EDITOR: EditorState = {
 }
 
 export default function AttributeLibraryPage() {
-    const t = useTranslation()
+    const { t, tPlural } = useT()
     const [items, setItems] = useState<AttributeDefinition[]>([])
     const [categories, setCategories] = useState<AttributeCategory[]>([])
     const [selectedIds, setSelectedIds] = useState<number[]>([])
@@ -81,7 +81,7 @@ export default function AttributeLibraryPage() {
         setError('')
         try {
             if (editor.categoryId === null) {
-                setError('Pick a category first.')
+                setError(t('attr_library.error.pick_category'))
                 return
             }
             const payload: CreateAttributePayload = {
@@ -104,13 +104,13 @@ export default function AttributeLibraryPage() {
             await refresh()
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-            setError(msg ?? 'Failed to save.')
+            setError(msg ?? t('attr_library.error.save_failed'))
         }
     }
 
     const bulkDelete = async () => {
         if (selectedIds.length === 0) return
-        if (!window.confirm(`Delete ${selectedIds.length} attribute(s)?`)) return
+        if (!window.confirm(tPlural('attr_library.delete.confirm', selectedIds.length, { count: selectedIds.length }))) return
         await Promise.all(selectedIds.map((id) => attributeApi.delete(id).catch(() => {})))
         setSelectedIds([])
         await refresh()
@@ -178,7 +178,7 @@ export default function AttributeLibraryPage() {
                                     type="checkbox"
                                     checked={selectedIds.length === items.length && items.length > 0}
                                     onChange={toggleAll}
-                                    aria-label="Select all"
+                                    aria-label={t('attr_library.aria.select_all')}
                                 />
                             </th>
                             <th>{t('attr.library.name')}</th>
@@ -205,7 +205,7 @@ export default function AttributeLibraryPage() {
                                 </td>
                                 <td className="fw-semibold">{a.name}</td>
                                 <td>{a.categoryName}</td>
-                                <td><code>{a.dataType}</code></td>
+                                <td><code>{t(`data_type.${a.dataType}`)}</code></td>
                                 <td>{a.required ? '✓' : ''}</td>
                             </tr>
                         ))}
@@ -280,9 +280,9 @@ export default function AttributeLibraryPage() {
                                             })
                                         }
                                     >
-                                        {DATA_TYPES.map((dt) => (
-                                            <option key={dt.value} value={dt.value}>
-                                                {dt.label}
+                                        {DATA_TYPE_VALUES.map((dt) => (
+                                            <option key={dt} value={dt}>
+                                                {t(`data_type.${dt}`)}
                                             </option>
                                         ))}
                                     </Form.Select>

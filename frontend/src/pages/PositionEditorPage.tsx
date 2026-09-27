@@ -13,20 +13,26 @@ import {
 import { attributeApi } from '../api/attributes'
 import type { AttributeDefinition } from '../types'
 import TagInput from '../components/TagInput'
+import { useT } from '../contexts/AppPreferencesContext'
 
-const LEVELS: PositionLevel[] = ['junior', 'middle', 'senior', 'c_level']
+const LEVEL_VALUES: PositionLevel[] = ['junior', 'middle', 'senior', 'c_level']
 
-const OPERATORS: { value: AccessRuleOperator; label: string; types: string[] }[] = [
-    { value: 'eq', label: '=', types: ['numeric', 'string', 'text', 'one_of_many', 'date', 'period', 'boolean', 'image'] },
-    { value: 'ne', label: '≠', types: ['numeric', 'string', 'text', 'one_of_many', 'image'] },
-    { value: 'gt', label: '>', types: ['numeric'] },
-    { value: 'gte', label: '≥', types: ['numeric'] },
-    { value: 'lt', label: '<', types: ['numeric'] },
-    { value: 'lte', label: '≤', types: ['numeric'] },
-    { value: 'in', label: 'in', types: ['one_of_many'] },
-    { value: 'contains', label: 'contains', types: ['string', 'text'] },
-    { value: 'before', label: 'before', types: ['date', 'period'] },
-    { value: 'after', label: 'after', types: ['date', 'period'] },
+// Operator UIs: each entry carries its data types so the access-rule
+// dropdown only shows operators that are meaningful for the chosen attribute.
+// Labels are produced at render time via t(`operator.${value}`) so they stay
+// in lockstep with the locale. Internal `value` stays in English for the
+// backend contract.
+const OPERATORS: { value: AccessRuleOperator; types: string[] }[] = [
+    { value: 'eq', types: ['numeric', 'string', 'text', 'one_of_many', 'date', 'period', 'boolean', 'image'] },
+    { value: 'ne', types: ['numeric', 'string', 'text', 'one_of_many', 'image'] },
+    { value: 'gt', types: ['numeric'] },
+    { value: 'gte', types: ['numeric'] },
+    { value: 'lt', types: ['numeric'] },
+    { value: 'lte', types: ['numeric'] },
+    { value: 'in', types: ['one_of_many'] },
+    { value: 'contains', types: ['string', 'text'] },
+    { value: 'before', types: ['date', 'period'] },
+    { value: 'after', types: ['date', 'period'] },
 ]
 
 interface AccessRuleDraft {
@@ -37,6 +43,7 @@ interface AccessRuleDraft {
 }
 
 export default function PositionEditorPage() {
+    const { t } = useT()
     const navigate = useNavigate()
     const params = useParams<{ id: string }>()
     const editing = params.id !== undefined
@@ -167,10 +174,10 @@ export default function PositionEditorPage() {
             const status = err?.response?.status
             if (status === 409) {
                 setConflict(true)
-                setError('Position was modified by another session. Reload to see the latest changes before saving again.')
+                setError(t('editor.save.conflict'))
             } else {
                 const msg = err?.response?.data?.error
-                setError(msg ?? 'Failed to save.')
+                setError(msg ?? t('editor.save.failed'))
             }
         } finally {
             setSaving(false)
@@ -183,22 +190,22 @@ export default function PositionEditorPage() {
 
     return (
         <div>
-            <h1 className="mb-3">{editing ? 'Edit position' : 'New position'}</h1>
+            <h1 className="mb-3">{editing ? t('editor.title.edit') : t('editor.title.new')}</h1>
             {error !== '' && (
                 <Alert variant={conflict ? 'warning' : 'danger'}>{error}</Alert>
             )}
 
             <div className="row g-3 mb-4">
                 <Form.Group className="col-md-8">
-                    <Form.Label>Title</Form.Label>
+                    <Form.Label>{t('editor.label.title')}</Form.Label>
                     <Form.Control value={title} onChange={(e) => setTitle(e.target.value)} />
                 </Form.Group>
                 <Form.Group className="col-md-4">
-                    <Form.Label>Company</Form.Label>
+                    <Form.Label>{t('editor.label.company')}</Form.Label>
                     <Form.Control value={company} onChange={(e) => setCompany(e.target.value)} />
                 </Form.Group>
                 <Form.Group className="col-12">
-                    <Form.Label>Short description</Form.Label>
+                    <Form.Label>{t('editor.label.short_description')}</Form.Label>
                     <Form.Control
                         as="textarea"
                         rows={2}
@@ -207,21 +214,21 @@ export default function PositionEditorPage() {
                     />
                 </Form.Group>
                 <Form.Group className="col-md-3">
-                    <Form.Label>Level</Form.Label>
+                    <Form.Label>{t('editor.label.level')}</Form.Label>
                     <Form.Select
                         value={level}
                         onChange={(e) => setLevel(e.target.value as PositionLevel | '')}
                     >
                         <option value="">—</option>
-                        {LEVELS.map((l) => (
+                        {LEVEL_VALUES.map((l) => (
                             <option key={l} value={l}>
-                                {l}
+                                {t(`level.${l}`)}
                             </option>
                         ))}
                     </Form.Select>
                 </Form.Group>
                 <Form.Group className="col-md-3">
-                    <Form.Label>Max projects</Form.Label>
+                    <Form.Label>{t('editor.label.max_projects')}</Form.Label>
                     <Form.Control
                         type="number"
                         min={0}
@@ -233,26 +240,26 @@ export default function PositionEditorPage() {
                 <Form.Group className="col-md-6 d-flex align-items-end">
                     <Form.Check
                         type="switch"
-                        label="Public (anyone can build CV)"
+                        label={t('editor.label.public_switch')}
                         checked={isPublic}
                         onChange={(e) => setIsPublic(e.target.checked)}
                     />
                 </Form.Group>
                 <Form.Group className="col-12">
-                    <Form.Label>Project tag filter</Form.Label>
+                    <Form.Label>{t('editor.label.project_tag_filter')}</Form.Label>
                     <TagInput
                         value={projectTagFilter}
                         onChange={setProjectTagFilter}
-                        placeholder="e.g. python, sql"
+                        placeholder={t('editor.placeholder.project_tag_filter')}
                     />
                 </Form.Group>
             </div>
 
-            <h3>Attributes</h3>
+            <h3>{t('editor.attributes.title')}</h3>
             <div className="row mb-4">
                 <div className="col-md-7">
                     {chosenAttributes.length === 0 ? (
-                        <div className="text-muted">No attributes yet.</div>
+                        <div className="text-muted">{t('editor.attributes.empty')}</div>
                     ) : (
                         <ul className="list-group">
                             {chosenAttributes.map((c, idx) => {
@@ -265,7 +272,7 @@ export default function PositionEditorPage() {
                                     >
                                         <span>
                                             <strong>{def.name}</strong>{' '}
-                                            <small className="text-muted">({def.dataType})</small>
+                                            <small className="text-muted">({t(`data_type.${def.dataType}`)})</small>
                                         </span>
                                         <span>
                                             <Button
@@ -303,7 +310,7 @@ export default function PositionEditorPage() {
                 <div className="col-md-5">
                     <div className="card">
                         <div className="card-body">
-                            <h6 className="card-title">Attribute library</h6>
+                            <h6 className="card-title">{t('editor.attribute_library.title')}</h6>
                             <div className="list-group" style={{ maxHeight: 320, overflowY: 'auto' }}>
                                 {attributeLibrary.map((def) => (
                                     <button
@@ -316,7 +323,7 @@ export default function PositionEditorPage() {
                                         <span>
                                             <strong>{def.name}</strong>
                                             <br />
-                                            <small className="text-muted">{def.dataType}</small>
+                                            <small className="text-muted">{t(`data_type.${def.dataType}`)}</small>
                                         </span>
                                         <span className="badge bg-secondary align-self-center">
                                             {chosenIds.has(def.id) ? '✓' : '+'}
@@ -332,15 +339,15 @@ export default function PositionEditorPage() {
             {!isPublic && (
                 <>
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h3 className="mb-0">Access rules</h3>
+                        <h3 className="mb-0">{t('editor.access.title')}</h3>
                         <Button size="sm" variant="outline-secondary" onClick={addRule}>
-                            Add rule
+                            {t('editor.access.add_rule')}
                         </Button>
                     </div>
 
                     {rules.length === 0 ? (
                         <div className="text-muted mb-4">
-                            No rules yet. Without rules, restricted positions would block everyone.
+                            {t('editor.access.empty')}
                         </div>
                     ) : (
                         rules.map((rule) => {
@@ -363,7 +370,7 @@ export default function PositionEditorPage() {
                                         >
                                             {attributeLibrary.map((d) => (
                                                 <option key={d.id} value={d.id}>
-                                                    {d.name} ({d.dataType})
+                                                    {d.name} ({t(`data_type.${d.dataType}`)})
                                                 </option>
                                             ))}
                                         </Form.Select>
@@ -383,7 +390,7 @@ export default function PositionEditorPage() {
                                         >
                                             {allowedOps.map((o) => (
                                                 <option key={o.value} value={o.value}>
-                                                    {o.label}
+                                                    {t(`operator.${o.value}`)}
                                                 </option>
                                             ))}
                                         </Form.Select>
@@ -418,10 +425,10 @@ export default function PositionEditorPage() {
 
             <div className="mt-4 d-flex gap-2">
                 <Button onClick={() => void submit()} disabled={saving}>
-                    {saving ? '…' : 'Save'}
+                    {saving ? '…' : t('editor.save')}
                 </Button>
                 <Button variant="secondary" onClick={() => navigate('/positions')}>
-                    Cancel
+                    {t('editor.cancel')}
                 </Button>
             </div>
         </div>

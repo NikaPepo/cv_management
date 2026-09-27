@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Spinner, Table } from 'react-bootstrap'
 import { cvApi, type CvSummary } from '../api/cvs'
+import { formatDate, usePreferences, useT } from '../contexts/AppPreferencesContext'
 
 export default function CvsSection() {
+    const { t } = useT()
+    const { locale } = usePreferences()
     const [items, setItems] = useState<CvSummary[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -18,9 +21,7 @@ export default function CvsSection() {
 
     if (items.length === 0) {
         return (
-            <div className="text-muted">
-                No CVs yet. Open a position and click <strong>Build CV</strong>.
-            </div>
+            <div className="text-muted">{t('cvs.empty')}</div>
         )
     }
 
@@ -28,12 +29,12 @@ export default function CvsSection() {
         <Table hover responsive className="align-middle">
             <thead>
                 <tr>
-                    <th>Position</th>
-                    <th>Status</th>
-                    <th>Published</th>
-                    <th>Updated</th>
-                    <th>Likes</th>
-                    <th>Access</th>
+                    <th>{t('cvs.col.position')}</th>
+                    <th>{t('cvs.col.status')}</th>
+                    <th>{t('cvs.col.published')}</th>
+                    <th>{t('cvs.col.updated')}</th>
+                    <th>{t('cvs.col.likes')}</th>
+                    <th>{t('cvs.col.access')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,19 +47,19 @@ export default function CvsSection() {
                         </td>
                         <td>
                             {c.status === 'DRAFT' ? (
-                                <span className="badge text-bg-secondary">DRAFT</span>
+                                <span className="badge text-bg-secondary">{t('status.draft')}</span>
                             ) : (
-                                <span className="badge text-bg-success">PUBLISHED</span>
+                                <span className="badge text-bg-success">{t('status.published')}</span>
                             )}
                         </td>
-                        <td>{c.publishedAt ?? '—'}</td>
-                        <td className="small">{c.updatedAt}</td>
+                        <td>{c.publishedAt ? formatDate(c.publishedAt, locale) : '—'}</td>
+                        <td className="small">{formatDate(c.updatedAt, locale)}</td>
                         <td>{c.likeCount}</td>
                         <td>
                             {c.accessible ? (
                                 <span className="text-success">✓</span>
                             ) : (
-                                <span className="text-danger">lost</span>
+                                <span className="text-danger">{t('access.lost')}</span>
                             )}
                         </td>
                     </tr>

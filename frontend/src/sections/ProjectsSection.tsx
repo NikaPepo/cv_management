@@ -3,6 +3,7 @@ import { Button, Form, Modal, Table } from 'react-bootstrap'
 import { projectApi, type CreateProjectPayload, type Project } from '../api/projects'
 import TagInput from '../components/TagInput'
 import Markdown from '../components/Markdown'
+import { useT } from '../contexts/AppPreferencesContext'
 
 interface EditorState {
     open: boolean
@@ -25,6 +26,7 @@ const EMPTY_EDITOR: EditorState = {
 }
 
 export default function ProjectsSection() {
+    const { t, tPlural } = useT()
     const [items, setItems] = useState<Project[]>([])
     const [editor, setEditor] = useState<EditorState | null>(null)
     const [selected, setSelected] = useState<number[]>([])
@@ -78,13 +80,13 @@ export default function ProjectsSection() {
             await refresh()
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-            setError(msg ?? 'Failed to save.')
+            setError(msg ?? t('projects.section.save_failed'))
         }
     }
 
     const bulkDelete = async () => {
         if (selected.length === 0) return
-        if (!window.confirm(`Delete ${selected.length} project(s)?`)) return
+        if (!window.confirm(tPlural('projects.section.delete.confirm', selected.length, { count: selected.length }))) return
         await Promise.all(selected.map((id) => projectApi.remove(id).catch(() => {})))
         setSelected([])
         await refresh()
@@ -103,8 +105,8 @@ export default function ProjectsSection() {
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3 className="mb-0">Projects</h3>
-                <Button onClick={openCreate}>New project</Button>
+                <h3 className="mb-0">{t('projects.section.title')}</h3>
+                <Button onClick={openCreate}>{t('projects.section.new')}</Button>
             </div>
 
             {selected.length > 0 && (
@@ -143,9 +145,9 @@ export default function ProjectsSection() {
             )}
 
             {loading ? (
-                <div>Loading…</div>
+                <div>{t('projects.section.loading')}</div>
             ) : items.length === 0 ? (
-                <div className="text-muted">No projects yet.</div>
+                <div className="text-muted">{t('projects.section.empty')}</div>
             ) : (
                 <Table hover responsive className="align-middle">
                     <thead>
@@ -157,9 +159,9 @@ export default function ProjectsSection() {
                                     onChange={toggleAll}
                                 />
                             </th>
-                            <th>Name</th>
-                            <th>Period</th>
-                            <th>Tags</th>
+                            <th>{t('projects.section.col.name')}</th>
+                            <th>{t('projects.section.col.period')}</th>
+                            <th>{t('projects.section.col.tags')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -204,7 +206,7 @@ export default function ProjectsSection() {
                     {editor && (
                         <div className="d-flex flex-column gap-3">
                             <Form.Group>
-                                <Form.Label>Name</Form.Label>
+                                <Form.Label>{t('projects.section.label.name')}</Form.Label>
                                 <Form.Control
                                     value={editor.name}
                                     onChange={(e) =>
@@ -214,7 +216,7 @@ export default function ProjectsSection() {
                             </Form.Group>
                             <div className="row">
                                 <Form.Group className="col-md-6">
-                                    <Form.Label>Period start</Form.Label>
+                                    <Form.Label>{t('projects.section.label.period_start')}</Form.Label>
                                     <Form.Control
                                         type="date"
                                         value={editor.periodStart}
@@ -224,7 +226,7 @@ export default function ProjectsSection() {
                                     />
                                 </Form.Group>
                                 <Form.Group className="col-md-6">
-                                    <Form.Label>Period end</Form.Label>
+                                    <Form.Label>{t('projects.section.label.period_end')}</Form.Label>
                                     <Form.Control
                                         type="date"
                                         value={editor.periodEnd}
@@ -235,7 +237,7 @@ export default function ProjectsSection() {
                                 </Form.Group>
                             </div>
                             <Form.Group>
-                                <Form.Label>Tags</Form.Label>
+                                <Form.Label>{t('projects.section.label.tags')}</Form.Label>
                                 <TagInput
                                     value={editor.technologyTags}
                                     onChange={(next) =>
@@ -244,7 +246,7 @@ export default function ProjectsSection() {
                                 />
                             </Form.Group>
                             <Form.Group>
-                                <Form.Label>Description (Markdown)</Form.Label>
+                                <Form.Label>{t('projects.section.label.description')}</Form.Label>
                                 <Form.Control
                                     as="textarea"
                                     rows={6}
@@ -265,7 +267,7 @@ export default function ProjectsSection() {
                     <Button variant="secondary" onClick={close}>
                         Cancel
                     </Button>
-                    <Button onClick={() => void submit()}>Save</Button>
+                    <Button onClick={() => void submit()}>{t('projects.section.save')}</Button>
                 </Modal.Footer>
             </Modal>
 

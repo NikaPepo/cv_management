@@ -3,6 +3,7 @@ import { Button, Form } from 'react-bootstrap'
 import { discussionApi, type DiscussionPost } from '../api/discussion'
 import Markdown from './Markdown'
 import { useAuth } from '../contexts/AuthContext'
+import { formatDateTime, usePreferences, useT } from '../contexts/AppPreferencesContext'
 
 const POLL_MS = 3000
 
@@ -17,6 +18,8 @@ interface Props {
  * the existing list every poll.
  */
 export default function Discussion({ positionId }: Props) {
+    const { t } = useT()
+    const { locale } = usePreferences()
     const { user } = useAuth()
     const [posts, setPosts] = useState<DiscussionPost[]>([])
     const [draft, setDraft] = useState('')
@@ -64,7 +67,7 @@ export default function Discussion({ positionId }: Props) {
     return (
         <div>
             {posts.length === 0 ? (
-                <div className="text-muted mb-3">No posts yet.</div>
+                <div className="text-muted mb-3">{t('discussion.empty')}</div>
             ) : (
                 <ul className="list-group mb-3">
                     {posts.map((p) => (
@@ -72,7 +75,7 @@ export default function Discussion({ positionId }: Props) {
                             <div className="d-flex justify-content-between mb-1">
                                 <strong>{p.authorName}</strong>
                                 <small className="text-muted">
-                                    {new Date(p.createdAt).toLocaleString()}
+                                    {formatDateTime(p.createdAt, locale)}
                                 </small>
                             </div>
                             <Markdown source={p.content} />
@@ -84,7 +87,7 @@ export default function Discussion({ positionId }: Props) {
             {user !== null && (
                 <div>
                     <Form.Group className="mb-2">
-                        <Form.Label>New post (Markdown)</Form.Label>
+                        <Form.Label>{t('discussion.label.new_post')}</Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}

@@ -59,10 +59,10 @@ export default function Layout({ children, searchSlot }: Props) {
                         style={{ width: 120 }}
                         value={locale}
                         onChange={(e) => setLocale(e.target.value as Locale)}
-                        aria-label="Language"
+                        aria-label={t('layout.aria.language')}
                     >
-                        <option value="en">English</option>
-                        <option value="ka">ქართული</option>
+                        <option value="en">{t('layout.language.english')}</option>
+                        <option value="ka">{t('layout.language.georgian')}</option>
                     </select>
 
                     <select
@@ -70,7 +70,7 @@ export default function Layout({ children, searchSlot }: Props) {
                         style={{ width: 120 }}
                         value={theme}
                         onChange={(e) => setTheme(e.target.value as Theme)}
-                        aria-label="Theme"
+                        aria-label={t('layout.aria.theme')}
                     >
                         <option value="light">{t('theme.light')}</option>
                         <option value="dark">{t('theme.dark')}</option>

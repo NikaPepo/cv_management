@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Button, Card, Form } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { authApi } from '../api/auth'
+import { useTranslation } from '../contexts/AppPreferencesContext'
 
 export default function ForgotPasswordPage() {
+    const t = useTranslation()
     const [email, setEmail] = useState('')
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -19,7 +21,7 @@ export default function ForgotPasswordPage() {
         } catch {
             // Even on failure we show the same neutral message to avoid leaking
             // which addresses exist; surface real transport errors only.
-            setError('Could not send reset link. Try again.')
+            setError(t('auth.forgot.failed'))
         } finally {
             setLoading(false)
         }
@@ -31,16 +33,16 @@ export default function ForgotPasswordPage() {
                 <div className="col-12 col-md-6 col-lg-4">
                     <Card className="shadow-sm">
                         <Card.Body className="p-4">
-                            <h1 className="text-center mb-4">Forgot password</h1>
+                            <h1 className="text-center mb-4">{t('auth.forgot.title')}</h1>
 
                             {submitted ? (
                                 <div className="alert alert-success py-2 small">
-                                    If an account exists for that email, a reset link has been sent.
+                                    {t('auth.forgot.success')}
                                 </div>
                             ) : (
                                 <Form onSubmit={onSubmit}>
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Email</Form.Label>
+                                        <Form.Label>{t('auth.forgot.email_label')}</Form.Label>
                                         <Form.Control
                                             type="email"
                                             value={email}
@@ -57,14 +59,14 @@ export default function ForgotPasswordPage() {
                                         className="w-100"
                                         disabled={loading}
                                     >
-                                        {loading ? '…' : 'Send reset link'}
+                                        {loading ? '…' : t('auth.forgot.submit')}
                                     </Button>
                                 </Form>
                             )}
 
                             <hr />
                             <Link to="/login" className="btn btn-link w-100">
-                                Back to sign in
+                                {t('auth.reset.back_to_signin')}
                             </Link>
                         </Card.Body>
                     </Card>

@@ -3,16 +3,12 @@ import { Button, Form, Table } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { positionApi, type Position, type PositionLevel } from '../api/positions'
 import { useAuth } from '../contexts/AuthContext'
+import { useT } from '../contexts/AppPreferencesContext'
 
-const LEVELS: { value: PositionLevel | ''; label: string }[] = [
-    { value: '', label: 'All levels' },
-    { value: 'junior', label: 'Junior' },
-    { value: 'middle', label: 'Middle' },
-    { value: 'senior', label: 'Senior' },
-    { value: 'c_level', label: 'C-level' },
-]
+const LEVEL_VALUES: (PositionLevel | '')[] = ['', 'junior', 'middle', 'senior', 'c_level']
 
 export default function PositionsPage() {
+    const { t, tPlural } = useT()
     const { hasRole } = useAuth()
     const [items, setItems] = useState<Position[]>([])
     const [company, setCompany] = useState('')
@@ -30,18 +26,19 @@ export default function PositionsPage() {
                 level: level === '' ? undefined : level,
             })
             setItems(data)
-        } catch (e: unknown) {
-            setError((e as Error).message)
+        } catch {
+            setError(t('error.generic'))
         }
     }
 
     useEffect(() => {
         void refresh()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [company, level, isStaff])
 
     const bulkDelete = async () => {
         if (selected.length === 0) return
-        if (!window.confirm(`Delete ${selected.length} position(s)?`)) return
+        if (!window.confirm(tPlural('positions.delete.confirm', selected.length, { count: selected.length }))) return
         await Promise.all(selected.map((id) => positionApi.remove(id).catch(() => {})))
         setSelected([])
         await refresh()
@@ -54,10 +51,6 @@ export default function PositionsPage() {
         await refresh()
     }
 
-    // Edit is a per-row action in spirit, but the assignment forbids a
-    // per-row "Edit" button. The accepted pattern is: edit appears in the
-    // toolbar when exactly one row is selected. The user double-clicks or
-    // selects one row and clicks "Edit selected".
     const selectedSingle = selected.length === 1 ? selected[0] : null
 
     const toggleSelect = (id: number) =>
@@ -68,32 +61,32 @@ export default function PositionsPage() {
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h1 className="mb-0">Positions</h1>
+                <h1 className="mb-0">{t('positions.title')}</h1>
                 {isStaff && (
                     <Link to="/positions/new" className="btn btn-primary">
-                        New position
+                        {t('positions.new_link')}
                     </Link>
                 )}
             </div>
 
             <div className="row mb-3">
                 <Form.Group className="col-md-4">
-                    <Form.Label>Company</Form.Label>
+                    <Form.Label>{t('positions.filter.company_label')}</Form.Label>
                     <Form.Control
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
-                        placeholder="Filter by company…"
+                        placeholder={t('positions.filter.company_placeholder')}
                     />
                 </Form.Group>
                 <Form.Group className="col-md-3">
-                    <Form.Label>Level</Form.Label>
+                    <Form.Label>{t('positions.filter.level_label')}</Form.Label>
                     <Form.Select
                         value={level}
                         onChange={(e) => setLevel(e.target.value as PositionLevel | '')}
                     >
-                        {LEVELS.map((l) => (
-                            <option key={l.value} value={l.value}>
-                                {l.label}
+                        {LEVEL_VALUES.map((l) => (
+                            <option key={l} value={l}>
+                                {t(`level.${l === '' ? 'all' : l}`)}
                             </option>
                         ))}
                     </Form.Select>
@@ -102,14 +95,14 @@ export default function PositionsPage() {
 
             {selected.length > 0 && isStaff && (
                 <div className="alert alert-secondary d-flex justify-content-between align-items-center">
-                    <span>{selected.length} selected</span>
+                    <span>{tPlural('positions.selected_count', selected.length, { count: selected.length })}</span>
                     <div className="d-flex gap-2">
                         {selectedSingle !== null && (
                             <Link
                                 to={`/positions/${selectedSingle}/edit`}
                                 className="btn btn-sm btn-outline-secondary"
                             >
-                                Edit selected
+                                {t('positions.edit_selected')}
                             </Link>
                         )}
                         <Button
@@ -117,14 +110,14 @@ export default function PositionsPage() {
                             variant="outline-info"
                             onClick={() => void bulkDuplicate()}
                         >
-                            Duplicate selected
+                            {t('positions.duplicate_selected')}
                         </Button>
                         <Button
                             size="sm"
                             variant="danger"
                             onClick={() => void bulkDelete()}
                         >
-                            Delete selected
+                            {t('positions.delete_selected')}
                         </Button>
                     </div>
                 </div>
@@ -133,7 +126,7 @@ export default function PositionsPage() {
             {error !== '' && <div className="alert alert-danger">{error}</div>}
 
             {items.length === 0 ? (
-                <div className="text-muted">No positions yet.</div>
+                <div className="text-muted">{t('positions.empty')}</div>
             ) : (
                 <Table hover responsive className="align-middle">
                     <thead>
@@ -147,11 +140,11 @@ export default function PositionsPage() {
                                     />
                                 </th>
                             )}
-                            <th>Title</th>
-                            <th>Company</th>
-                            <th>Level</th>
-                            <th>Access</th>
-                            <th>Submitted CVs</th>
+                            <th>{t('positions.col.title')}</th>
+                            <th>{t('positions.col.company')}</th>
+                            <th>{t('positions.col.level')}</th>
+                            <th>{t('positions.col.access')}</th>
+                            <th>{t('positions.col.submitted_cvs')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -182,12 +175,12 @@ export default function PositionsPage() {
                                     <small className="text-muted">{p.shortDescription}</small>
                                 </td>
                                 <td>{p.company ?? '—'}</td>
-                                <td>{p.level ?? '—'}</td>
+                                <td>{p.level ? t(`level.${p.level}`) : '—'}</td>
                                 <td>
                                     {p.isPublic ? (
-                                        <span className="badge text-bg-success">public</span>
+                                        <span className="badge text-bg-success">{t('access.public')}</span>
                                     ) : (
-                                        <span className="badge text-bg-warning">restricted</span>
+                                        <span className="badge text-bg-warning">{t('access.restricted')}</span>
                                     )}
                                 </td>
                                 <td>{p.submittedCvs ?? '—'}</td>

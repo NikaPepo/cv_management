@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Alert, Button, Card, Form, ProgressBar } from 'react-bootstrap'
 import { authApi } from '../api/auth'
+import { useTranslation } from '../contexts/AppPreferencesContext'
 
 /**
  * Page reached from the link in the password-reset email.
  * Token comes via ?token=... and is sent to the backend on submit.
  */
 export default function ResetPasswordPage() {
+    const t = useTranslation()
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const token = searchParams.get('token') ?? ''
@@ -33,20 +35,20 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         if (token === '') {
-            setError('Missing or invalid reset link.')
+            setError(t('auth.reset.missing_token'))
         }
-    }, [token])
+    }, [token, t])
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
         if (token === '') return
         if (password.length < 8) {
-            setError('Password must be at least 8 characters.')
+            setError(t('auth.reset.password_too_short'))
             return
         }
         if (password !== confirm) {
-            setError('Passwords do not match.')
+            setError(t('auth.reset.passwords_mismatch'))
             return
         }
         setLoading(true)
@@ -56,7 +58,7 @@ export default function ResetPasswordPage() {
             window.setTimeout(() => navigate('/login'), 2000)
         } catch (e: unknown) {
             const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-            setError(msg ?? 'Could not reset password.')
+            setError(msg ?? t('auth.reset.failed'))
         } finally {
             setLoading(false)
         }
@@ -68,16 +70,16 @@ export default function ResetPasswordPage() {
                 <div className="col-12 col-md-6 col-lg-4">
                     <Card className="shadow-sm">
                         <Card.Body className="p-4">
-                            <h1 className="text-center mb-4">Set a new password</h1>
+                            <h1 className="text-center mb-4">{t('auth.reset.title')}</h1>
 
                             {done ? (
                                 <Alert variant="success">
-                                    Password reset. Redirecting to sign in…
+                                    {t('auth.reset.success')}
                                 </Alert>
                             ) : (
                                 <Form onSubmit={onSubmit}>
                                     <Form.Group className="mb-3">
-                                        <Form.Label>New password</Form.Label>
+                                        <Form.Label>{t('auth.reset.new_password_label')}</Form.Label>
                                         <Form.Control
                                             type="password"
                                             value={password}
@@ -97,7 +99,7 @@ export default function ResetPasswordPage() {
                                         )}
                                     </Form.Group>
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Repeat password</Form.Label>
+                                        <Form.Label>{t('auth.reset.repeat_password_label')}</Form.Label>
                                         <Form.Control
                                             type="password"
                                             value={confirm}
@@ -118,14 +120,14 @@ export default function ResetPasswordPage() {
                                         className="w-100"
                                         disabled={loading || token === ''}
                                     >
-                                        {loading ? '…' : 'Reset password'}
+                                        {loading ? '…' : t('auth.reset.submit')}
                                     </Button>
                                 </Form>
                             )}
 
                             <hr />
                             <Link to="/login" className="btn btn-link w-100">
-                                Back to sign in
+                                {t('auth.reset.back_to_signin')}
                             </Link>
                         </Card.Body>
                     </Card>

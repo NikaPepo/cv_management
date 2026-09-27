@@ -124,7 +124,7 @@ export default function MeSection() {
             <div className="col-md-9">
                 <div className="row g-3">
                     <Form.Group className="col-md-6">
-                        <Form.Label>First name</Form.Label>
+                        <Form.Label>{t('me.label.first_name')}</Form.Label>
                         <Form.Control
                             value={draft.firstName ?? ''}
                             onChange={(e) =>
@@ -133,7 +133,7 @@ export default function MeSection() {
                         />
                     </Form.Group>
                     <Form.Group className="col-md-6">
-                        <Form.Label>Last name</Form.Label>
+                        <Form.Label>{t('me.label.last_name')}</Form.Label>
                         <Form.Control
                             value={draft.lastName ?? ''}
                             onChange={(e) =>
@@ -142,7 +142,7 @@ export default function MeSection() {
                         />
                     </Form.Group>
                     <Form.Group className="col-12">
-                        <Form.Label>Location</Form.Label>
+                        <Form.Label>{t('me.label.location')}</Form.Label>
                         <Form.Control
                             value={draft.location ?? ''}
                             onChange={(e) =>
@@ -164,7 +164,7 @@ export default function MeSection() {
                     )}
                     {status === 'error' && (
                         <Alert variant="danger" className="py-2 mb-0 small">
-                            Save failed.
+                            {t('cv_detail.save.failed')}
                         </Alert>
                     )}
                 </div>
