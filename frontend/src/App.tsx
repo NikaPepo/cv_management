@@ -4,6 +4,7 @@ import { AppPreferencesProvider } from './contexts/AppPreferencesContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import GlobalSearch from './components/GlobalSearch'
+import AuthErrorBanner from './components/AuthErrorBanner'
 
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -19,11 +20,13 @@ import PositionEditorPage from './pages/PositionEditorPage'
 import PositionViewPage from './pages/PositionViewPage'
 import CvDetailPage from './pages/CvDetailPage'
 import PositionCvsPage from './pages/PositionCvsPage'
+import SetPasswordPage from './pages/SetPasswordPage'
 
 function App() {
     return (
         <AppPreferencesProvider>
             <AuthProvider>
+                <AuthErrorBanner />
                 <BrowserRouter>
                     <Routes>
                         <Route
@@ -145,6 +148,24 @@ function App() {
                                 <ProtectedRoute>
                                     <Layout searchSlot={<GlobalSearch />}>
                                         <ProfilePage />
+                                    </Layout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        {/*
+                          Authenticated set-password flow. Wired as a
+                          separate page (rather than embedded inside
+                          ProfilePage) so the URL is shareable / can be
+                          opened in a new tab, and so the form gets its
+                          own focused UI without competing with the
+                          existing autosave Profile fields.
+                         */}
+                        <Route
+                            path="/set-password"
+                            element={
+                                <ProtectedRoute>
+                                    <Layout searchSlot={<GlobalSearch />}>
+                                        <SetPasswordPage />
                                     </Layout>
                                 </ProtectedRoute>
                             }

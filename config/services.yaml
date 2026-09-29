@@ -14,6 +14,11 @@ parameters:
         cloudinary.api_secret: '%env(CLOUDINARY_API_SECRET)%'
         app.frontend_url: '%env(FRONTEND_URL)%'
         messenger.cron_token: '%env(MESSENGER_CRON_TOKEN)%'
+        # Used by OriginValidationSubscriber as the Origin/Referer allowlist
+        # for authenticated state-changing requests. Mirrors CORS_ALLOW_ORIGIN
+        # (consumed by nelmio_cors for preflight handling) so both checks
+        # agree on what counts as the legitimate frontend origin.
+        app.cors_allow_origin: '%env(CORS_ALLOW_ORIGIN)%'
 
 services:
     # default configuration for services in *this* file
@@ -32,6 +37,14 @@ services:
     App\Security\OAuthSuccessHandler:
         arguments:
             $frontendUrl: '%app.frontend_url%'
+    App\Security\LogoutMethodRestrictionListener:
+        arguments:
+            # Mirrors firewalls.main.logout.path in security.yaml. Keep both
+            # values in sync if the logout path ever changes.
+            $logoutPath: '/api/logout'
+    App\Security\OriginValidationSubscriber:
+        arguments:
+            $allowedOrigin: '%app.cors_allow_origin%'
     App\Controller\ResetPasswordController:
         arguments:
             $mailerFromAddress: '%mailer.from_address%'

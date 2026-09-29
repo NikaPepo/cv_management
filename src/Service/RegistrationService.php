@@ -32,7 +32,26 @@ readonly class RegistrationService
             ]
         );
         if (null !== $existingUser) {
-            throw new ConflictHttpException('User already exists.');
+            // The User row is unique by email — never create a second
+            // row with the same email under any circumstances. This
+            // covers both:
+            //   1. The user already has an email/password account.
+            //   2. The user is OAuth-only (password=NULL, has a
+            //      SocialAccount) and is trying to also "register" a
+            //      password.
+            // In case (2) the right action for them is to use the
+            // authenticated /api/set-password endpoint OR the public
+            // forgot-password flow — both target the same User row and
+            // do not create a duplicate. We surface a single generic
+            // message that nudges them there without leaking which
+            // path they originally used (we never say "registered via
+            // Google", which would enable user enumeration).
+            throw new ConflictHttpException(
+                'An account with this email already exists. '
+                . 'Sign in with the provider you used originally, or use '
+                . '"Forgot password" to set a password if you registered '
+                . 'by email.'
+            );
         }
         $user = new User();
         $hashedPassword = $this->passwordHasher->hashPassword(

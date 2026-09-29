@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Form, Spinner } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import { profileApi, type ProfileDto } from '../api/profile'
 import { cloudinaryApi } from '../api/projects'
+import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from '../contexts/AppPreferencesContext'
 
 const AUTOSAVE_MS = 7000
 
 export default function MeSection() {
     const t = useTranslation()
+    const { user } = useAuth()
     const [profile, setProfile] = useState<ProfileDto | null>(null)
     const [draft, setDraft] = useState<ProfileDto | null>(null)
     const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'conflict' | 'error'>('idle')
@@ -168,6 +171,27 @@ export default function MeSection() {
                         </Alert>
                     )}
                 </div>
+
+                {/*
+                  // Sign-in methods block. Only renders for OAuth-only
+                  // users (hasPassword === false) and surfaces the
+                  // authenticated set-password link. If hasPassword is
+                  // undefined (older /api/me response shape) we hide
+                  // the block rather than guess.
+                 */}
+                {user !== null && !user.hasPassword && (
+                    <Alert variant="info" className="mt-3 small mb-0">
+                        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                            <span>{t('auth.set_password.oauth_only_hint')}</span>
+                            <Link
+                                to="/set-password"
+                                className="btn btn-sm btn-outline-primary"
+                            >
+                                {t('auth.set_password.submit')}
+                            </Link>
+                        </div>
+                    </Alert>
+                )}
 
                 {error !== '' && <Alert variant="danger" className="mt-3 small">{error}</Alert>}
             </div>

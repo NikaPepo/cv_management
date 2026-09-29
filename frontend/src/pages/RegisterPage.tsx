@@ -15,19 +15,39 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('')
     const [accountType, setAccountType] = useState<AccountType>('candidate')
     const [error, setError] = useState('')
+    const [errorIsDuplicate, setErrorIsDuplicate] = useState(false)
     const [loading, setLoading] = useState(false)
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+        setErrorIsDuplicate(false)
         setLoading(true)
         try {
             await api.post('/api/registration', { email, password, accountType })
             await refresh()
             navigate('/', { replace: true })
         } catch (e: unknown) {
-            const data = (e as { response?: { data?: { error?: string } } })?.response?.data
-            setError(data?.error ?? t('auth.register.failed'))
+            const response = (e as { response?: { status?: number; data?: { error?: string } } })?.response
+            // 409 Conflict from the server means an account with this
+            // email already exists. That covers two cases the user
+            // needs to recognise:
+            //   1. They previously registered with email + password.
+            //   2. They previously signed up via Google / Facebook
+            //      and now want to also be able to sign in with a
+            //      password — they should sign in with the original
+            //      provider, or use "forgot password" to set one on
+            //      the SAME account.
+            // We deliberately do NOT say which provider, because that
+            // would leak information about which emails exist.
+            if (response?.status === 409) {
+                setError(t('auth.register.duplicate_email_hint'))
+                setErrorIsDuplicate(true)
+            } else {
+                const data = response?.data
+                setError(data?.error ?? t('auth.register.failed'))
+                setErrorIsDuplicate(false)
+            }
         } finally {
             setLoading(false)
         }
@@ -74,6 +94,17 @@ export default function RegisterPage() {
                                 </Form.Group>
 
                                 {error && <div className="alert alert-danger py-2 small">{error}</div>}
+
+                                {/*
+                                  Surface "Forgot password?" specifically when
+                                  we know the email is taken. Otherwise the
+                                  generic failure path stays uncluttered.
+                                 */}
+                                {errorIsDuplicate && (
+                                    <div className="text-center small">
+                                        <Link to="/forgot-password">{t('auth.login.forgot_link')}</Link>
+                                    </div>
+                                )}
 
                                 <Button
                                     type="submit"

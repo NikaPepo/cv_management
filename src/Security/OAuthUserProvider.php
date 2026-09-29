@@ -12,6 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\Core\User\OAuthAwareUserProviderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 use LogicException;
@@ -105,8 +106,19 @@ readonly class OAuthUserProvider implements
         $user = $this->userRepository->findOneByEmail($identifier);
 
         if ($user === null) {
-            throw new LogicException(
-                'User with this email was not found.'
+            // UserNotFoundException is an AuthenticationException — Symfony's
+            // firewall treats it as "invalid credentials" and json_login maps
+            // it to 401. Throwing LogicException here would have surfaced as
+            // a 500 with an HTML error page, leaking implementation details
+            // and bypassing the unified authentication-failure response.
+            //
+            // The message stays generic on purpose: it must not reveal
+            // whether the email is registered. The LoginController's
+            // anti-enumeration policy (same response for wrong email and
+            // wrong password) is preserved by the firewall not echoing
+            // this exception message back to the client.
+            throw new UserNotFoundException(
+                'Invalid credentials.'
             );
         }
 
@@ -128,8 +140,11 @@ readonly class OAuthUserProvider implements
         // tracked by the UnitOfWork, and entityManager->flush() is a no-op.
         $refreshed = $this->userRepository->find($user->getId());
         if ($refreshed === null) {
-            throw new LogicException(
-                sprintf('User %d no longer exists.', $user->getId())
+            // Same rationale as loadUserByIdentifier: an account that
+            // vanished mid-session is an authentication failure, not a
+            // server error. The original LogicException surfaced as a 500.
+            throw new UserNotFoundException(
+                'Invalid credentials.'
             );
         }
 

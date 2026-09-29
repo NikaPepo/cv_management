@@ -28,6 +28,14 @@ final class MeController extends AbstractController
             'email' => $user->getEmail(),
             'isVerified' => $user->isVerified(),
             'roles' => $user->getRoles(),
+            // Tells the SPA whether the user can authenticate via
+            // email + password. OAuth-only users have password=NULL and
+            // need a separate flow (forgot-password OR the authenticated
+            // /api/set-password endpoint) to add one. Exposing this flag
+            // is safe: it does not leak any secret, and the SPA uses it
+            // purely to decide whether to surface the "set password"
+            // action in Profile.
+            'hasPassword' => $user->getPassword() !== null,
         ]);
     }
 }

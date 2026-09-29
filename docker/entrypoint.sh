@@ -27,6 +27,53 @@ PORT="${PORT:-8080}"
 # ---- Replace __PORT__ placeholder in nginx config ----
 sed -i "s/__PORT__/${PORT}/g" /etc/nginx/http.d/default.conf
 
+# ---- Startup diagnostic: print trusted_hosts / trusted_proxies ----
+# Temporary diagnostic for the "Untrusted Host" incident on Render.
+# Prints only the host-validation env vars (no secrets). Fails the
+# container start if SYMFONY_TRUSTED_HOSTS is unset, empty, or does
+# not contain the expected Render hostname — that's the failure mode
+# behind "Symfony\Component\HttpKernel\Exception\BadRequestHttpException:
+# Untrusted Host".
+EXPECTED_HOST="cv-management-1.onrender.com"
+echo "[entrypoint] === trusted_hosts / trusted_proxies diagnostic ==="
+if [[ -n "${SYMFONY_TRUSTED_HOSTS:-}" ]]; then
+    echo "[entrypoint] SYMFONY_TRUSTED_HOSTS is set: yes"
+    echo "[entrypoint] SYMFONY_TRUSTED_HOSTS value: '${SYMFONY_TRUSTED_HOSTS}'"
+    echo "[entrypoint] SYMFONY_TRUSTED_HOSTS length: ${#SYMFONY_TRUSTED_HOSTS}"
+    # Normalize before substring match. Trusted_hosts accepts either:
+    #   - literal:        "cv-management-1.onrender.com"
+    #   - escaped regex:  "^cv-management-1\.onrender\.com$"
+    # Strip ^, $, and backslashes so both forms contain the hostname
+    # after normalization.
+    NORMALIZED="${SYMFONY_TRUSTED_HOSTS//\\/}"
+    NORMALIZED="${NORMALIZED//^/}"
+    NORMALIZED="${NORMALIZED//$/}"
+    if [[ "${NORMALIZED}" != *"${EXPECTED_HOST}"* ]]; then
+        echo "[entrypoint] FATAL: SYMFONY_TRUSTED_HOSTS does not contain expected hostname '${EXPECTED_HOST}'."
+        echo "[entrypoint] Expected to find '${EXPECTED_HOST}' (after stripping regex anchors / backslashes) in SYMFONY_TRUSTED_HOSTS."
+        echo "[entrypoint] Normalized value was: '${NORMALIZED}'"
+        echo "[entrypoint] Check Render Dashboard → Environment → SYMFONY_TRUSTED_HOSTS for typos / old value / hidden whitespace."
+        echo "[entrypoint] (Allowed forms: 'cv-management-1.onrender.com' literal, or '^(.*\\\\.)?cv-management-1\\\\.onrender\\\\.com$' anchored regex.)"
+        exit 1
+    fi
+    echo "[entrypoint] SYMFONY_TRUSTED_HOSTS contains expected hostname '${EXPECTED_HOST}': OK"
+else
+    echo "[entrypoint] SYMFONY_TRUSTED_HOSTS is set: no"
+    echo "[entrypoint] FATAL: SYMFONY_TRUSTED_HOSTS is not set in the container environment."
+    echo "[entrypoint] Without SYMFONY_TRUSTED_HOSTS, Symfony's framework.trusted_hosts is empty"
+    echo "[entrypoint] and every request to Symfony returns 400 'Untrusted Host'."
+    echo "[entrypoint] Set SYMFONY_TRUSTED_HOSTS in Render Dashboard → Environment"
+    echo "[entrypoint] (allowed: 'cv-management-1.onrender.com' or anchored regex). Then redeploy."
+    exit 1
+fi
+if [[ -n "${SYMFONY_TRUSTED_PROXIES:-}" ]]; then
+    echo "[entrypoint] SYMFONY_TRUSTED_PROXIES is set: yes"
+    echo "[entrypoint] SYMFONY_TRUSTED_PROXIES value: '${SYMFONY_TRUSTED_PROXIES}'"
+else
+    echo "[entrypoint] SYMFONY_TRUSTED_PROXIES is set: no (Symfony will trust no proxies)"
+fi
+echo "[entrypoint] === end diagnostic ==="
+
 # ---- Wait for PostgreSQL ----
 # Block startup until DB is reachable. Loop with backoff; we
 # intentionally never give up here because Render's restart

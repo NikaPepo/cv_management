@@ -211,6 +211,13 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.register.account_type_label': 'Account type',
         'auth.register.submit': 'Sign up',
         'auth.register.failed': 'Registration failed.',
+        // Shown on 409 from /api/registration. Points the user at
+        // existing flows that can give them access without creating
+        // a duplicate account. Phrased so it does NOT leak whether
+        // they originally registered with email/password or via an
+        // OAuth provider.
+        'auth.register.duplicate_email_hint':
+            'An account with this email already exists. Sign in with your existing provider, or use “Forgot password” to set a password.',
 
         'auth.forgot.title': 'Forgot password',
         'auth.forgot.email_label': 'Email',
@@ -228,6 +235,29 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.reset.passwords_mismatch': 'Passwords do not match.',
         'auth.reset.failed': 'Could not reset password.',
         'auth.reset.back_to_signin': 'Back to sign in',
+
+        // --- set-password (authenticated; for OAuth-only users) ---
+        // Mirrors the auth.reset.* validation copy where it overlaps
+        // (length / confirmation messages), so both password-setting
+        // flows feel like the same policy. Page-specific copy is here.
+        'auth.set_password.title': 'Set a password',
+        'auth.set_password.intro':
+            'Add a password so you can also sign in with your email and password. You will still be able to sign in with your social account.',
+        'auth.set_password.submit': 'Set password',
+        'auth.set_password.success': 'Password set. Redirecting to your profile…',
+        'auth.set_password.failed': 'Could not set password.',
+        'auth.set_password.not_authenticated':
+            'You need to be signed in to set a password.',
+        'auth.set_password.oauth_only_hint':
+            'Your account was created with a social provider. Set a password to enable email + password sign-in.',
+
+        // --- auth status banner (non-401 /api/me failure) ---
+        // Shown when the initial session check returned 5xx or never
+        // reached the server. Distinct from the expected 401 path
+        // (logged-out user), which keeps error=null and shows the
+        // public UI normally.
+        'auth.error.unable_to_verify':
+            "We couldn't reach the authentication service. Some features may be unavailable.",
 
         // --- positions ---
         'positions.title': 'Positions',
@@ -541,6 +571,8 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.register.account_type_label': 'ანგარიშის ტიპი',
         'auth.register.submit': 'რეგისტრაცია',
         'auth.register.failed': 'რეგისტრაცია ვერ მოხერხდა.',
+        'auth.register.duplicate_email_hint':
+            'ამ ელ-ფოსტით ანგარიში უკვე არსებობს. შედით თქვენი არსებული პროვაიდერით, ან გამოიყენეთ „პაროლის აღდგენა" პაროლის დასაყენებლად.',
 
         'auth.forgot.title': 'პაროლის აღდგენა',
         'auth.forgot.email_label': 'ელ-ფოსტა',
@@ -558,6 +590,22 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.reset.passwords_mismatch': 'პაროლები არ ემთხვევა.',
         'auth.reset.failed': 'პაროლის აღდგენა ვერ მოხერხდა.',
         'auth.reset.back_to_signin': 'შესვლაზე დაბრუნება',
+
+        // --- set-password (authenticated; for OAuth-only users) ---
+        'auth.set_password.title': 'პაროლის დაყენება',
+        'auth.set_password.intro':
+            'დაამატეთ პაროლი, რომ შეძლოთ შესვლა ელ-ფოსტითა და პაროლით. სოციალური ანგარიშით შესვლაც კვლავ შეგიძლიათ.',
+        'auth.set_password.submit': 'პაროლის დაყენება',
+        'auth.set_password.success': 'პაროლი დაყენებულია. გადამისამართება პროფილზე…',
+        'auth.set_password.failed': 'პაროლის დაყენება ვერ მოხერხდა.',
+        'auth.set_password.not_authenticated':
+            'პაროლის დასაყენებლად უნდა იყოთ შესული.',
+        'auth.set_password.oauth_only_hint':
+            'თქვენი ანგარიში შეიქმნა სოციალური პროვაიდერით. დააყენეთ პაროლი, რომ ელ-ფოსტით შესვლაც შეძლოთ.',
+
+        // --- auth status banner (non-401 /api/me failure) ---
+        'auth.error.unable_to_verify':
+            'ავთენტიფიკაციის სერვისთან დაკავშირება ვერ მოხერხდა. ზოგიერთი ფუნქცია შეიძლება მიუწვდომელი იყოს.',
 
         'positions.title': 'პოზიციები',
         'positions.new_link': 'ახალი პოზიცია',
