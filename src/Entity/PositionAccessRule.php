@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Enum\AccessRuleOperator;
-use App\Repository\PositionAccessRuleRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -16,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  * (numeric, date, one_of_many option id, etc.). The PositionService
  * validates compatibility at write time so we don't store garbage.
  */
-#[ORM\Entity(repositoryClass: PositionAccessRuleRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'position_access_rule')]
 class PositionAccessRule
 {

@@ -53,11 +53,6 @@ services:
     App\Controller\RegistrationController:
         arguments:
             $frontendUrl: '%app.frontend_url%'
-    App\Service\CloudinaryUploader:
-        arguments:
-            $cloudName: '%cloudinary.cloud_name%'
-            $apiKey: '%cloudinary.api_key%'
-            $apiSecret: '%cloudinary.api_secret%'
     App\Service\CloudinarySignatureService:
         arguments:
             $cloudName: '%cloudinary.cloud_name%'

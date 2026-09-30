@@ -39,8 +39,8 @@ WORKDIR /app
 COPY composer.json composer.lock symfony.lock ./
 
 # Skip composer post-install-cmd scripts here — Symfony code isn't
-# present in this stage, so cache:clear / assets:install /
-# importmap:install can't run. We invoke them explicitly in stage 3.
+# present in this stage, so cache:clear can't run. We invoke it
+# explicitly in stage 3.
 RUN composer install \
     --no-dev \
     --no-interaction \
@@ -110,10 +110,8 @@ COPY config ./config
 COPY migrations ./migrations
 COPY public ./public
 COPY src ./src
-COPY assets ./assets
 COPY templates ./templates
 COPY translations ./translations
-COPY importmap.php ./
 
 # Vendor from previous stage.
 COPY --from=vendor-builder /app/vendor ./vendor
@@ -125,8 +123,7 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # to be writable for cache:clear; we run them as root here and chown
 # var/ to www-data afterwards.
 RUN mkdir -p var/cache var/log \
-    && php bin/console assets:install public --no-interaction || true \
-    && php bin/console importmap:install --no-interaction || true \
+    && php bin/console cache:clear --no-interaction --env=prod || true \
     && chown -R www-data:www-data var/ public/
 
 # Symfony's Dotenv requires the .env file to exist even when every
