@@ -34,7 +34,7 @@ sed -i "s/__PORT__/${PORT}/g" /etc/nginx/http.d/default.conf
 # not contain the expected Render hostname — that's the failure mode
 # behind "Symfony\Component\HttpKernel\Exception\BadRequestHttpException:
 # Untrusted Host".
-EXPECTED_HOST="https://cv-management-1ccc.onrender.com"
+EXPECTED_HOST="cv-management-1ccc.onrender.com"
 echo "[entrypoint] === trusted_hosts / trusted_proxies diagnostic ==="
 if [[ -n "${SYMFONY_TRUSTED_HOSTS:-}" ]]; then
     echo "[entrypoint] SYMFONY_TRUSTED_HOSTS is set: yes"
