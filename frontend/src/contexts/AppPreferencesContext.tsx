@@ -201,6 +201,8 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.login.verified_banner': 'Email verified. You can sign in now.',
         'auth.login.verify_error_prefix': 'Verification link is invalid or expired:',
         'auth.login.invalid_credentials': 'Invalid credentials.',
+        'auth.login.email_not_verified':
+            'Please verify your email address before logging in. Check your inbox for the confirmation link.',
         'auth.login.forgot_link': 'Forgot password?',
         'auth.login.email_label': 'Email',
         'auth.login.password_label': 'Password',
@@ -561,6 +563,8 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'auth.login.verified_banner': 'ელ-ფოსტა დადასტურებულია. ახლა შეგიძლიათ შესვლა.',
         'auth.login.verify_error_prefix': 'დადასტურების ბმული არასწორია ან ვადაგასდგომია:',
         'auth.login.invalid_credentials': 'არასწორი მონაცემები.',
+        'auth.login.email_not_verified':
+            'გთხოვთ, დაადასტუროთ ელ-ფოსტა შესვლამდე. შეამოწმეთ შემოსული წერილი დადასტურების ბმულზე.',
         'auth.login.forgot_link': 'დაგავიწყდათ პაროლი?',
         'auth.login.email_label': 'ელ-ფოსტა',
         'auth.login.password_label': 'პაროლი',

@@ -39,6 +39,14 @@ security:
                 # api_login is a route we will create below
                 check_path: api_login
                 username_path: email
+                # Surfaces a `code: "email_not_verified"` field on the 401
+                # body when AppUserChecker rejects an unverified
+                # email/password account. Every other AuthenticationException
+                # (wrong password, unknown email, blocked) keeps the
+                # default Symfony response shape so the anti-enumeration
+                # invariant tested in tests/Controller/Security/LoginTest
+                # is preserved.
+                failure_handler: App\Security\JsonLoginFailureHandler
             logout:
                 path: /api/logout
                 target: api_logout_success

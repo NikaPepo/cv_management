@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Button, Card, Form } from 'react-bootstrap'
+import axios from 'axios'
 import api from '../api/axios'
 import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from '../contexts/AppPreferencesContext'
@@ -39,8 +40,22 @@ export default function LoginPage() {
             await api.post('/api/login', { email, password })
             await refresh()
             navigate('/', { replace: true })
-        } catch {
-            setError(t('auth.login.invalid_credentials'))
+        } catch (err) {
+            // The backend distinguishes "please verify your email" from
+            // generic auth failures by setting this `code` field on the
+            // 401 body — see JsonLoginFailureHandler. Every other
+            // failure (wrong password, unknown email, blocked) keeps the
+            // default Symfony `{"error": "..."}` shape, so we fall back
+            // to the existing copy.
+            if (
+                axios.isAxiosError(err) &&
+                err.response?.status === 401 &&
+                (err.response.data as { code?: string } | null)?.code === 'email_not_verified'
+            ) {
+                setError(t('auth.login.email_not_verified'))
+            } else {
+                setError(t('auth.login.invalid_credentials'))
+            }
         } finally {
             setLoading(false)
         }

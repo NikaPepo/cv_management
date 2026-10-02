@@ -25,7 +25,7 @@ final class CloudinarySignatureController extends AbstractController
      * a file directly to Cloudinary, bypassing the Symfony server.
      */
     #[Route('/signature', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function signature(Request $request): JsonResponse
     {
         $payload = json_decode($request->getContent() ?: '{}', true);
