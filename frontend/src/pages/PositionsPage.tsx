@@ -9,7 +9,7 @@ const LEVEL_VALUES: (PositionLevel | '')[] = ['', 'junior', 'middle', 'senior', 
 
 export default function PositionsPage() {
     const { t, tPlural } = useT()
-    const { hasRole } = useAuth()
+    const { hasRole, loading } = useAuth()
     const [items, setItems] = useState<Position[]>([])
     const [company, setCompany] = useState('')
     const [level, setLevel] = useState<PositionLevel | ''>('')
@@ -32,9 +32,17 @@ export default function PositionsPage() {
     }
 
     useEffect(() => {
+        // AuthContext is still resolving the initial /api/me: user is
+        // null, so isStaff is false and a fetch here would go out
+        // without ?all=1. When /api/me resolves the effect re-runs with
+        // the real role, racing the in-flight no-all request — the
+        // public-only response sometimes wins and clobbers the correct
+        // all-positions response. Skip the fetch until the auth state is
+        // known; the effect re-fires when authLoading flips to false.
+        if (loading) return
         void refresh()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [company, level, isStaff])
+    }, [company, level, isStaff, loading])
 
     const bulkDelete = async () => {
         if (selected.length === 0) return

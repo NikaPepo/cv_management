@@ -11,35 +11,53 @@ import {
     type PositionLevel,
 } from '../api/positions'
 import { attributeApi } from '../api/attributes'
-import type { AttributeDefinition } from '../types'
+import type { AttributeDefinition, DataType } from '../types'
 import TagInput from '../components/TagInput'
+import TypedInput from '../components/TypedInput'
 import { useT } from '../contexts/AppPreferencesContext'
 
 const LEVEL_VALUES: PositionLevel[] = ['junior', 'middle', 'senior', 'c_level']
 
-// Operator UIs: each entry carries its data types so the access-rule
-// dropdown only shows operators that are meaningful for the chosen attribute.
-// Labels are produced at render time via t(`operator.${value}`) so they stay
-// in lockstep with the locale. Internal `value` stays in English for the
-// backend contract.
-const OPERATORS: { value: AccessRuleOperator; types: string[] }[] = [
-    { value: 'eq', types: ['numeric', 'string', 'text', 'one_of_many', 'date', 'period', 'boolean', 'image'] },
-    { value: 'ne', types: ['numeric', 'string', 'text', 'one_of_many', 'image'] },
-    { value: 'gt', types: ['numeric'] },
-    { value: 'gte', types: ['numeric'] },
-    { value: 'lt', types: ['numeric'] },
-    { value: 'lte', types: ['numeric'] },
-    { value: 'in', types: ['one_of_many'] },
-    { value: 'contains', types: ['string', 'text'] },
-    { value: 'before', types: ['date', 'period'] },
-    { value: 'after', types: ['date', 'period'] },
-]
+/**
+ * Operators allowed per dataType. Mirrors
+ * App\Enum\AccessRuleOperator::allowedFor() on the backend — kept in
+ * sync by hand because the editor needs to filter the dropdown before
+ * the user picks a value. The backend is still the source of truth
+ * (PositionService::syncAccessRules rejects incompatible operators
+ * with 422).
+ */
+const OPERATORS_BY_TYPE: Record<DataType, AccessRuleOperator[]> = {
+    numeric: ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'],
+    boolean: ['eq'],
+    one_of_many: ['eq', 'ne', 'in'],
+    date: ['eq', 'before', 'after'],
+    period: ['eq', 'before', 'after'],
+    string: ['eq', 'ne', 'contains'],
+    text: ['eq', 'ne', 'contains'],
+    image: ['eq', 'ne'],
+}
 
 interface AccessRuleDraft {
     key: string
     attributeDefinitionId: number
     operator: AccessRuleOperator
     value: unknown
+}
+
+/**
+ * Picks a sane default value for a freshly-added rule, given the
+ * attribute's dataType. Keeps the editor from sending booleans as
+ * strings, dates as empty strings, etc.
+ */
+function defaultValueFor(dataType: DataType | undefined): unknown {
+    switch (dataType) {
+        case 'boolean':
+            return false
+        case 'period':
+            return { start: null, end: null }
+        default:
+            return null
+    }
 }
 
 export default function PositionEditorPage() {
@@ -79,6 +97,7 @@ export default function PositionEditorPage() {
             }
             setLoading(false)
         })()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [params.id])
 
     const hydrate = (p: Position) => {
@@ -128,20 +147,50 @@ export default function PositionEditorPage() {
     }
 
     const addRule = () => {
-        const def = attributeLibrary[0]
+        // Prefer an attribute that's NOT already chosen in another rule
+        // so the recruiter doesn't accidentally create two rules on the
+        // same attribute (which the evaluator would treat as AND).
+        const usedIds = new Set(rules.map((r) => r.attributeDefinitionId))
+        const def = attributeLibrary.find((d) => !usedIds.has(d.id)) ?? attributeLibrary[0]
         if (def === undefined) return
+        const allowed = OPERATORS_BY_TYPE[def.dataType] ?? ['eq']
         setRules((cur) => [
             ...cur,
             {
                 key: `new-${Date.now()}`,
                 attributeDefinitionId: def.id,
-                operator: 'eq',
-                value: null,
+                operator: allowed[0],
+                value: defaultValueFor(def.dataType),
             },
         ])
     }
 
     const removeRule = (key: string) => setRules((cur) => cur.filter((r) => r.key !== key))
+
+    /**
+     * When the recruiter swaps the attribute on a rule, the previous
+     * operator and value are almost certainly incompatible with the new
+     * dataType. Reset both: pick the first compatible operator and a
+     * sensible empty value for the new dataType. The PositionService
+     * would also reject the bad combination with 422, but this keeps
+     * the editor self-consistent on its own.
+     */
+    const changeRuleAttribute = (key: string, newDefId: number) => {
+        const newDef = attributeLibrary.find((d) => d.id === newDefId)
+        const allowed = newDef === undefined ? ['eq' as AccessRuleOperator] : (OPERATORS_BY_TYPE[newDef.dataType] ?? ['eq'])
+        setRules((cur) =>
+            cur.map((r) =>
+                r.key === key
+                    ? {
+                          ...r,
+                          attributeDefinitionId: newDefId,
+                          operator: allowed[0],
+                          value: defaultValueFor(newDef?.dataType),
+                      }
+                    : r,
+            ),
+        )
+    }
 
     const submit = async () => {
         setSaving(true)
@@ -219,7 +268,7 @@ export default function PositionEditorPage() {
                         value={level}
                         onChange={(e) => setLevel(e.target.value as PositionLevel | '')}
                     >
-                        <option value="">—</option>
+                        <option value="">{t('level.all')}</option>
                         {LEVEL_VALUES.map((l) => (
                             <option key={l} value={l}>
                                 {t(`level.${l}`)}
@@ -352,69 +401,78 @@ export default function PositionEditorPage() {
                     ) : (
                         rules.map((rule) => {
                             const def = attributeLibrary.find((d) => d.id === rule.attributeDefinitionId)
-                            const allowedOps = def === undefined ? [] : OPERATORS.filter((o) => o.types.includes(def.dataType))
+                            const allowedOps = def === undefined
+                                ? []
+                                : OPERATORS_BY_TYPE[def.dataType] ?? ['eq']
                             return (
-                                <div key={rule.key} className="row g-2 align-items-center mb-2">
-                                    <Form.Group className="col-md-4">
-                                        <Form.Select
-                                            value={rule.attributeDefinitionId}
-                                            onChange={(e) =>
-                                                setRules((cur) =>
-                                                    cur.map((r) =>
-                                                        r.key === rule.key
-                                                            ? { ...r, attributeDefinitionId: Number(e.target.value) }
-                                                            : r
-                                                    )
-                                                )
-                                            }
-                                        >
-                                            {attributeLibrary.map((d) => (
-                                                <option key={d.id} value={d.id}>
-                                                    {d.name} ({t(`data_type.${d.dataType}`)})
-                                                </option>
-                                            ))}
-                                        </Form.Select>
-                                    </Form.Group>
-                                    <Form.Group className="col-md-2">
-                                        <Form.Select
-                                            value={rule.operator}
-                                            onChange={(e) =>
-                                                setRules((cur) =>
-                                                    cur.map((r) =>
-                                                        r.key === rule.key
-                                                            ? { ...r, operator: e.target.value as AccessRuleOperator }
-                                                            : r
-                                                    )
-                                                )
-                                            }
-                                        >
-                                            {allowedOps.map((o) => (
-                                                <option key={o.value} value={o.value}>
-                                                    {t(`operator.${o.value}`)}
-                                                </option>
-                                            ))}
-                                        </Form.Select>
-                                    </Form.Group>
-                                    <Form.Group className="col-md-5">
-                                        <Form.Control
-                                            value={String(rule.value ?? '')}
-                                            onChange={(e) =>
-                                                setRules((cur) =>
-                                                    cur.map((r) =>
-                                                        r.key === rule.key ? { ...r, value: e.target.value } : r
-                                                    )
-                                                )
-                                            }
-                                        />
-                                    </Form.Group>
-                                    <div className="col-md-1">
-                                        <Button
-                                            size="sm"
-                                            variant="outline-danger"
-                                            onClick={() => removeRule(rule.key)}
-                                        >
-                                            ×
-                                        </Button>
+                                <div key={rule.key} className="card mb-2">
+                                    <div className="card-body">
+                                        <div className="row g-2 align-items-center">
+                                            <Form.Group className="col-md-5">
+                                                <Form.Select
+                                                    value={rule.attributeDefinitionId}
+                                                    onChange={(e) =>
+                                                        changeRuleAttribute(rule.key, Number(e.target.value))
+                                                    }
+                                                >
+                                                    {attributeLibrary.map((d) => (
+                                                        <option key={d.id} value={d.id}>
+                                                            {d.name} ({t(`data_type.${d.dataType}`)})
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
+                                            </Form.Group>
+                                            <Form.Group className="col-md-2">
+                                                <Form.Select
+                                                    value={rule.operator}
+                                                    onChange={(e) =>
+                                                        setRules((cur) =>
+                                                            cur.map((r) =>
+                                                                r.key === rule.key
+                                                                    ? { ...r, operator: e.target.value as AccessRuleOperator }
+                                                                    : r,
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    {allowedOps.map((o) => (
+                                                        <option key={o} value={o}>
+                                                            {t(`operator.${o}`)}
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
+                                            </Form.Group>
+                                            <Form.Group className="col-md-4">
+                                                {def === undefined ? (
+                                                    <div className="text-muted small">
+                                                        {t('editor.access.definition_missing')}
+                                                    </div>
+                                                ) : (
+                                                    <TypedInput
+                                                        dataType={def.dataType}
+                                                        definition={def}
+                                                        value={rule.value}
+                                                        onChange={(next) =>
+                                                            setRules((cur) =>
+                                                                cur.map((r) =>
+                                                                    r.key === rule.key ? { ...r, value: next } : r,
+                                                                ),
+                                                            )
+                                                        }
+                                                    />
+                                                )}
+                                            </Form.Group>
+                                            <div className="col-md-1 d-flex align-items-end">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline-danger"
+                                                    onClick={() => removeRule(rule.key)}
+                                                    aria-label={t('editor.access.remove_rule')}
+                                                >
+                                                    ×
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )

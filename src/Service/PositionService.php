@@ -221,12 +221,164 @@ final readonly class PositionService
                     $def->getDataType()->value
                 ));
             }
+            $normalizedValue = $this->validateAndNormalizeAccessRuleValue(
+                $item->value,
+                $def,
+            );
             $rule = new PositionAccessRule();
             $rule->setPosition($position);
             $rule->setAttributeDefinition($def);
             $rule->setOperator($operator);
-            $rule->setValue($item->value);
+            $rule->setValue($normalizedValue);
             $position->getAccessRules()->add($rule);
+        }
+    }
+
+    /**
+     * Validates an access-rule `value` against its attribute's dataType
+     * and returns the canonical shape that PositionAccessEvaluator
+     * expects to read. Throws 422 (UnprocessableEntityHttpException)
+     * with a human-readable message if the value's shape is wrong.
+     *
+     * The frontend editor uses TypedInput which already produces the
+     * right shape per dataType; this server-side gate is the source of
+     * truth — anything malformed coming from the wire gets rejected
+     * before it can poison the evaluator.
+     */
+    private function validateAndNormalizeAccessRuleValue(mixed $value, AttributeDefinition $def): mixed
+    {
+        $type = $def->getDataType();
+
+        // null is allowed for every type — the editor starts rules
+        // empty and the recruiter fills them in. The evaluator's
+        // extractValue() handles nulls as "rule not satisfied".
+        if ($value === null) {
+            return null;
+        }
+
+        switch ($type) {
+            case AttributeDataType::Numeric:
+                // Numeric is stored as decimal-string in the column, so
+                // accept either an int/float or a numeric-looking string.
+                if (is_int($value) || is_float($value)) {
+                    return (string) $value;
+                }
+                if (is_string($value) && is_numeric(trim($value))) {
+                    return trim($value);
+                }
+                throw new UnprocessableEntityHttpException(sprintf(
+                    'Numeric access rule for "%s" expects a number, got: %s',
+                    $def->getName(),
+                    get_debug_type($value),
+                ));
+
+            case AttributeDataType::Boolean:
+                if (!is_bool($value)) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'Boolean access rule for "%s" expects a true/false boolean.',
+                        $def->getName(),
+                    ));
+                }
+                return $value;
+
+            case AttributeDataType::OneOfMany:
+                // one_of_many stores the AttributeOption.id (int). The
+                // option must actually belong to this definition —
+                // otherwise the evaluator would silently compare against
+                // an option from a different attribute and the rule
+                // would either match the wrong thing or never match.
+                if (!is_int($value)) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'one_of_many access rule for "%s" expects an option id (integer), got: %s',
+                        $def->getName(),
+                        get_debug_type($value),
+                    ));
+                }
+                $match = null;
+                foreach ($def->getOptions() as $option) {
+                    if ($option->getId() === $value) {
+                        $match = $option;
+                        break;
+                    }
+                }
+                if ($match === null) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'one_of_many access rule for "%s" references unknown option id %d.',
+                        $def->getName(),
+                        $value,
+                    ));
+                }
+                return $match->getId();
+
+            case AttributeDataType::Date:
+                if (!is_string($value)) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'Date access rule for "%s" expects a YYYY-MM-DD string.',
+                        $def->getName(),
+                    ));
+                }
+                // Same shape ProfileAttribute stores: ISO calendar date.
+                $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+                if ($parsed === false || $parsed->format('Y-m-d') !== $value) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'Date access rule for "%s" is not a valid YYYY-MM-DD date: %s',
+                        $def->getName(),
+                        $value,
+                    ));
+                }
+                return $value;
+
+            case AttributeDataType::Period:
+                if (!is_array($value)) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'Period access rule for "%s" expects {start, end} object with YYYY-MM-DD strings.',
+                        $def->getName(),
+                    ));
+                }
+                $start = $value['start'] ?? null;
+                $end = $value['end'] ?? null;
+                $normalized = ['start' => null, 'end' => null];
+                foreach (['start' => $start, 'end' => $end] as $field => $raw) {
+                    if ($raw === null) {
+                        continue;
+                    }
+                    if (!is_string($raw)) {
+                        throw new UnprocessableEntityHttpException(sprintf(
+                            'Period access rule for "%s" field "%s" must be a YYYY-MM-DD string.',
+                            $def->getName(),
+                            $field,
+                        ));
+                    }
+                    $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw);
+                    if ($parsed === false || $parsed->format('Y-m-d') !== $raw) {
+                        throw new UnprocessableEntityHttpException(sprintf(
+                            'Period access rule for "%s" field "%s" is not a valid YYYY-MM-DD date: %s',
+                            $def->getName(),
+                            $field,
+                            $raw,
+                        ));
+                    }
+                    $normalized[$field] = $raw;
+                }
+                return $normalized;
+
+            case AttributeDataType::String:
+            case AttributeDataType::Text:
+            case AttributeDataType::Image:
+                if (!is_string($value)) {
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'Access rule for "%s" (type %s) expects a string value.',
+                        $def->getName(),
+                        $type->value,
+                    ));
+                }
+                return $value;
+
+            default:
+                // Unknown dataType — let the existing logic above
+                // (or the DB) decide what to do. We don't reject new
+                // types the editor may not yet render.
+                return $value;
         }
     }
 
