@@ -19,6 +19,10 @@ parameters:
         # (consumed by nelmio_cors for preflight handling) so both checks
         # agree on what counts as the legitimate frontend origin.
         app.cors_allow_origin: '%env(CORS_ALLOW_ORIGIN)%'
+        salesforce.login_url: '%env(SALESFORCE_LOGIN_URL)%'
+        salesforce.client_id: '%env(SALESFORCE_CLIENT_ID)%'
+        salesforce.client_secret: '%env(SALESFORCE_CLIENT_SECRET)%'
+        salesforce.api_version: '%env(SALESFORCE_API_VERSION)%'
 
 services:
     # default configuration for services in *this* file
@@ -66,5 +70,15 @@ services:
     App\Controller\MessengerConsumeController:
         arguments:
             $cronToken: '%messenger.cron_token%'
+    App\Service\Salesforce\SalesforceAuthenticator:
+        # Four scalars bound to backend-only env vars. The client ID
+        # and secret never touch the Symfony container params that
+        # get exposed to the React bundle — they are kept strictly
+        # inside this one wiring block.
+        arguments:
+            $loginUrl: '%salesforce.login_url%'
+            $clientId: '%salesforce.client_id%'
+            $clientSecret: '%salesforce.client_secret%'
+            $apiVersion: '%salesforce.api_version%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

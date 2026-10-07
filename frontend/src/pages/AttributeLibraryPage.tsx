@@ -23,7 +23,7 @@ interface EditorState {
     dataType: DataType
     categoryId: number | null
     required: boolean
-    options: { value: string; sortOrder: number }[]
+    options: { value: string; sortOrder: number; id?: number }[]
 }
 
 const EMPTY_EDITOR: EditorState = {
@@ -67,7 +67,12 @@ export default function AttributeLibraryPage() {
             dataType: a.dataType,
             categoryId: a.categoryId,
             required: a.required,
+            // Preserve each option's server-side id — the backend uses
+            // it to UPDATE existing rows in place instead of INSERTing
+            // duplicates. New options the recruiter types into the
+            // editor below are pushed with id: undefined.
             options: (a.options ?? []).map((o) => ({
+                id: o.id,
                 value: o.value,
                 sortOrder: o.sortOrder,
             })),

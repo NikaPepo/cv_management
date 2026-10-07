@@ -61,6 +61,14 @@ export interface CvView {
     likeCount: number
     hasUnpublishedRequired: boolean
     hasLiked?: boolean
+    /**
+     * Server-determined ownership flag. The CV controller computes
+     * `$isOwner` from the authenticated user's profile.id vs the CV's
+     * profile.id; recruiters/admins get false even though they have
+     * staff role on the mutating endpoints. Frontend uses it to hide
+     * Edit attributes / Delete / Publish buttons.
+     */
+    isOwner?: boolean
 }
 
 export const cvApi = {

@@ -20,7 +20,12 @@ export default function CvDetailPage() {
     const [selectedAttrIds, setSelectedAttrIds] = useState<Set<number>>(new Set())
     const [actionBusy, setActionBusy] = useState(false)
 
-    const isOwner = true // controller scopes edit endpoints; this view only opens for owner or admin
+    // Ownership comes from the backend — the CV controller computes
+    // `$isOwner` from the authenticated user's profile.id vs the CV's
+    // profile.id. Recruiters and admins always get `false` here, even
+    // when they have staff role on the mutating endpoints, so they
+    // can't see Edit attributes / Delete / Publish buttons in this UI.
+    const isOwner = view?.isOwner === true
     const isStaff = hasRole('ROLE_RECRUITER', 'ROLE_ADMIN')
 
     const refresh = async () => {

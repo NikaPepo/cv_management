@@ -5,6 +5,7 @@ import { profileApi, type ProfileDto } from '../api/profile'
 import { cloudinaryApi } from '../api/projects'
 import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from '../contexts/AppPreferencesContext'
+import SalesforceExportModal from '../components/SalesforceExportModal'
 
 const AUTOSAVE_MS = 7000
 
@@ -16,6 +17,7 @@ export default function MeSection() {
     const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'conflict' | 'error'>('idle')
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState('')
+    const [salesforceOpen, setSalesforceOpen] = useState(false)
     const timerRef = useRef<number | null>(null)
 
     useEffect(() => {
@@ -194,7 +196,40 @@ export default function MeSection() {
                 )}
 
                 {error !== '' && <Alert variant="danger" className="mt-3 small">{error}</Alert>}
+
+                {/*
+                  // Salesforce export — available to every authenticated
+                  // user on their own profile (Candidate, Recruiter, and
+                  // Administrator all keep their own contact card). The
+                  // backend resolves the current user via #[CurrentUser],
+                  // never from request body, so no extra authorization
+                  // rule is needed here.
+                 */}
+                <div className="mt-4 pt-3 border-top">
+                    <h2 className="h5">External systems</h2>
+                    <p className="text-muted small mb-2">
+                        Send your contact details to a Salesforce CRM. We
+                        create an Account and a Contact on first export,
+                        then update the same records on every subsequent
+                        export — no duplicates.
+                    </p>
+                    <Button
+                        variant="outline-primary"
+                        onClick={() => setSalesforceOpen(true)}
+                    >
+                        Export to Salesforce
+                    </Button>
+                </div>
             </div>
+            <SalesforceExportModal
+                show={salesforceOpen}
+                onClose={() => setSalesforceOpen(false)}
+                initial={{
+                    firstName: draft.firstName,
+                    lastName: draft.lastName,
+                    email: user?.email ?? null,
+                }}
+            />
         </div>
     )
 }

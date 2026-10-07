@@ -91,27 +91,81 @@ final readonly class AttributeDefinitionService
             $attribute->setRequired($dto->required);
         }
         if ($dto->options !== null) {
-            // The assignment requires that "Add new Position attribute should appear empty
-            // in old CVs" — we don't cascade edits. We just replace the dropdown options
-            // for OneOfMany; CVs read selected options by FK with SET NULL, so old CVs
-            // render as empty until candidate re-selects.
             if ($attribute->getDataType() !== AttributeDataType::OneOfMany) {
                 throw new UnprocessableEntityHttpException('Only OneOfMany attributes accept options.');
             }
-            foreach ($attribute->getOptions() as $existing) {
-                $this->attributeDefinitionRepository->getEntityManager()->remove($existing);
-            }
-            foreach ($dto->options as $opt) {
-                $option = new AttributeOption();
-                $option->setAttributeDefinition($attribute);
-                $option->setValue($opt->value);
-                $option->setSortOrder($opt->sortOrder);
-                $attribute->getOptions()->add($option);
-            }
+            $this->syncOptions($attribute, $dto->options);
         }
 
         $this->attributeDefinitionRepository->save($attribute);
         return $attribute;
+    }
+
+    /**
+     * Identity-aware sync of AttributeOption rows against the submitted
+     * list. Three rules:
+     *
+     *   - DTO has id + the id is one of OUR existing options → UPDATE
+     *     (rename, re-sort, anything — keeps the row id stable so any
+     *     ProfileAttribute.selectedOptionId FK still resolves).
+     *
+     *   - DTO has id but the id is foreign / stale (not in our set) → 422.
+     *     Letting a recruiter "claim" another attribute's option would break
+     *     the FK isolation that ProfileAttribute and the access-rule
+     *     validator already rely on (see PositionService::validateAndNormalize…one_of_many).
+     *
+     *   - DTO has no id → INSERT a new AttributeOption.
+     *
+     * After the loop, anything still in the in-memory collection whose
+     * id was NOT submitted is dropped via the inverse-side
+     * `AttributeDefinition::removeOption()`. Combined with
+     * `orphanRemoval: true` on the mapping, this produces exactly one
+     * DELETE per dropped row — single flush at the end of `update()`.
+     */
+    private function syncOptions(AttributeDefinition $attribute, array $submitted): void
+    {
+        $existingById = [];
+        foreach ($attribute->getOptions() as $current) {
+            $existingId = $current->getId();
+            if ($existingId !== null) {
+                $existingById[$existingId] = $current;
+            }
+        }
+
+        $seenIds = [];
+        foreach ($submitted as $item) {
+            if ($item->id !== null) {
+                $id = $item->id;
+                if (!isset($existingById[$id])) {
+                    // Foreign or stale id — refuse rather than silently
+                    // CREATE a new row under another attribute's id.
+                    throw new UnprocessableEntityHttpException(sprintf(
+                        'AttributeOption id %d does not belong to this AttributeDefinition.',
+                        $id,
+                    ));
+                }
+                $existing = $existingById[$id];
+                $existing->setValue($item->value);
+                $existing->setSortOrder($item->sortOrder);
+                $seenIds[$id] = true;
+                continue;
+            }
+
+            // New option: id is null. Build it via addOption so the
+            // owning-side FK stays consistent on both sides.
+            $new = new AttributeOption();
+            $new->setValue($item->value);
+            $new->setSortOrder($item->sortOrder);
+            $attribute->addOption($new);
+        }
+
+        // Drop options the recruiter removed from the dropdown.
+        // removeElement + orphanRemoval = single DELETE on flush.
+        foreach ($existingById as $id => $current) {
+            if (!isset($seenIds[$id])) {
+                $attribute->removeOption($current);
+            }
+        }
     }
 
     public function delete(AttributeDefinition $attribute): void

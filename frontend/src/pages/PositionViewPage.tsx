@@ -131,26 +131,11 @@ export default function PositionViewPage() {
                     ) : (
                         <ul className="list-group mb-4">
                             {position.attributes.map((a) => (
-                                <li key={a.attributeDefinitionId} className="list-group-item d-flex justify-content-between">
-                                    <span>{a.name}</span>
-                                    <small className="text-muted">{t(`data_type.${a.dataType}`)}</small>
+                                <li key={a.attributeDefinitionId} className="list-group-item">
+                                    {a.name}
                                 </li>
                             ))}
                         </ul>
-                    )}
-
-                    {position.accessRules !== undefined && position.accessRules.length > 0 && (
-                        <>
-                            <h3>{t('view.access.title')}</h3>
-                            <ul className="list-group">
-                                {position.accessRules.map((r, idx) => (
-                                    <li key={idx} className="list-group-item">
-                                        <strong>{r.attributeName}</strong> {t(`operator.${r.operator}`)}{' '}
-                                        <code>{JSON.stringify(r.value)}</code>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
                     )}
 
                     {position.accessible === false && (

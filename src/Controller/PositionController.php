@@ -39,21 +39,35 @@ final class PositionController extends AbstractController
     #[Route('', methods: ['GET'])]
     public function list(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        $showAll = $request->query->getBoolean('all', false);
         $company = $request->query->get('company');
         $levelParam = $request->query->get('level');
-        $level = $levelParam !== null && $levelParam !== '' ? PositionLevel::tryFrom($levelParam) : null;
+        // Empty string == "All levels" == no filter. Invalid values
+        // surface as null too — the SQL filter simply skips, which is
+        // consistent with how `?level=` already behaves.
+        $level = is_string($levelParam) && $levelParam !== ''
+            ? PositionLevel::tryFrom($levelParam)
+            : null;
+        $companyFilter = is_string($company) ? $company : null;
 
-        // Recruiters/Admins can request `all=1` to see every position.
-        if ($showAll && ($this->isGranted('ROLE_RECRUITER') || $this->isGranted('ROLE_ADMIN'))) {
+        // Role is the source of truth, not a query parameter. Staff
+        // (recruiter/admin) always see every Position; anonymous / candidate
+        // see public + restricted they qualify for.
+        $isStaff = $this->isGranted('ROLE_RECRUITER')
+            || $this->isGranted('ROLE_ADMIN');
+
+        if ($isStaff) {
             return $this->json(array_map(
                 static fn (Position $p) => self::present($p, withRules: true),
-                $this->positionRepository->findFiltered(is_string($company) ? $company : null, $level)
+                $this->positionRepository->findFiltered($companyFilter, $level)
             ));
         }
 
-        $candidates = $this->positionRepository->findAccessibleCandidates();
         $profile = $user?->getProfile();
+        // Apply the level filter in SQL first so the access-evaluation
+        // pass doesn't waste work on rows the filter would drop, and so
+        // the over-fetch budget is spent on rows that could actually
+        // match.
+        $candidates = $this->positionRepository->findAccessibleCandidates($level);
         $accessible = array_values(array_filter(
             $candidates,
             fn (Position $p) => $this->accessEvaluator->isAccessible($p, $profile)
@@ -95,7 +109,15 @@ final class PositionController extends AbstractController
         $profile = $user?->getProfile();
         $accessible = $this->accessEvaluator->isAccessible($position, $profile);
 
-        return $this->json(self::present($position, withRules: true) + ['accessible' => $accessible]);
+        // Access Rules are the *gating criteria* of a restricted position,
+        // not user content of it. Exposing them on the public read
+        // endpoint would let anyone probe the rubric a recruiter uses to
+        // filter candidates. Keep them only on /api/positions/{id}
+        // responses to recruiters/admins, who use the same endpoint to
+        // inspect the position they're editing.
+        $withRules = $this->isGranted('ROLE_RECRUITER');
+
+        return $this->json(self::present($position, withRules: $withRules) + ['accessible' => $accessible]);
     }
 
     #[Route('', methods: ['POST'])]

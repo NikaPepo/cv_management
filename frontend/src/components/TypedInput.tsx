@@ -8,6 +8,12 @@ interface TypedInputProps {
     value: unknown
     onChange: (v: unknown) => void
     onBlur?: () => void
+    /**
+     * For one_of_many, true switches the dropdown into multi-select
+     * mode (operator "in"). The editor passes this based on the rule's
+     * operator; non-one_of_many dataTypes ignore the flag.
+     */
+    multiple?: boolean
 }
 
 /**
@@ -26,6 +32,7 @@ export default function TypedInput({
     value,
     onChange,
     onBlur,
+    multiple = false,
 }: TypedInputProps) {
     const { t } = useT()
     switch (dataType) {
@@ -125,6 +132,61 @@ export default function TypedInput({
                 />
             )
         case 'one_of_many':
+            if (multiple) {
+                // Operator "in": checkbox list. A native <Form.Select
+                // multiple required Ctrl/Cmd+click to pick more than
+                // one option, which is invisible to the recruiter and
+                // broken on touch. A plain stack of Form.Check renders
+                // exactly the "tick the boxes you want" UX the audit
+                // asked for, with the entire label clickable.
+                //
+                // We persist the same number[] that the single select
+                // would have emitted; backend doesn't care which UI
+                // built it.
+                const selectedIds = Array.isArray(value)
+                    ? new Set((value as number[]))
+                    : new Set<number>();
+                const options = definition.options ?? [];
+                return (
+                    <div
+                        role="group"
+                        aria-label={t('editor.access.value')}
+                        className="border rounded p-2 bg-body"
+                        style={{ maxHeight: 200, overflowY: 'auto' }}
+                    >
+                        {options.length === 0 ? (
+                            <div className="text-muted small">
+                                {t('editor.access.no_options')}
+                            </div>
+                        ) : (
+                            options.map((o) => {
+                                const checked = selectedIds.has(o.id);
+                                return (
+                                    <Form.Check
+                                        key={o.id}
+                                        type="checkbox"
+                                        id={`attr-option-${definition.id}-${o.id}`}
+                                        label={o.value}
+                                        checked={checked}
+                                        onChange={(e) => {
+                                            const next = new Set(selectedIds);
+                                            if (e.target.checked) {
+                                                next.add(o.id);
+                                            } else {
+                                                next.delete(o.id);
+                                            }
+                                            // Hand back a plain array so
+                                            // serialisation to JSON stays
+                                            // stable (no Set leakage).
+                                            onChange(Array.from(next));
+                                        }}
+                                    />
+                                );
+                            })
+                        )}
+                    </div>
+                );
+            }
             return (
                 <Form.Select
                     value={(value as number | null) ?? ''}

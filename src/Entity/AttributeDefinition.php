@@ -120,4 +120,33 @@ class AttributeDefinition
     {
         return $this->options;
     }
+
+    /**
+     * Adds an option to the in-memory collection and keeps the
+     * owning-side FK in sync so Doctrine treats this as a single
+     * managed relationship (no duplicate INSERTs on flush).
+     */
+    public function addOption(AttributeOption $option): static
+    {
+        if (!$this->options->contains($option)) {
+            $this->options->add($option);
+            $option->setAttributeDefinition($this);
+        }
+        return $this;
+    }
+
+    /**
+     * Removes an option from the in-memory collection. Combined with
+     * `orphanRemoval: true` on the mapping, this triggers a single
+     * DELETE on flush — no need for a separate EntityManager::remove()
+     * call, and no risk of leaving a detached Entity behind in the
+     * collection. The owning-side FK stays set; this method is only
+     * safe to use during a sync where the Entity will be discarded
+     * (e.g. on the same flush that drops it from the collection).
+     */
+    public function removeOption(AttributeOption $option): static
+    {
+        $this->options->removeElement($option);
+        return $this;
+    }
 }

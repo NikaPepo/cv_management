@@ -60,6 +60,36 @@ function defaultValueFor(dataType: DataType | undefined): unknown {
     }
 }
 
+/**
+ * Picks a default value for the rule that depends on BOTH the attribute
+ * dataType AND the operator. Used when the recruiter switches operator
+ * within the same attribute (e.g. eq → in on a one_of_many) so the
+ * previous scalar value doesn't leak across as the wrong type.
+ */
+function defaultValueForOperator(
+    dataType: DataType | undefined,
+    operator: AccessRuleOperator,
+): unknown {
+    if (dataType === 'one_of_many' && operator === 'in') {
+        return []
+    }
+    return defaultValueFor(dataType)
+}
+
+/**
+ * Returns whether a value for the given operator/dataType is a single
+ * scalar ("one") or a list ("many"). Used to decide whether a stale
+ * value must be reset when the recruiter switches operator within the
+ * same attribute.
+ */
+function operatorValueShape(
+    operator: AccessRuleOperator,
+    dataType: DataType | undefined,
+): 'one' | 'many' {
+    if (dataType === 'one_of_many' && operator === 'in') return 'many'
+    return 'one'
+}
+
 export default function PositionEditorPage() {
     const { t } = useT()
     const navigate = useNavigate()
@@ -154,13 +184,14 @@ export default function PositionEditorPage() {
         const def = attributeLibrary.find((d) => !usedIds.has(d.id)) ?? attributeLibrary[0]
         if (def === undefined) return
         const allowed = OPERATORS_BY_TYPE[def.dataType] ?? ['eq']
+        const initialOp = allowed[0]
         setRules((cur) => [
             ...cur,
             {
                 key: `new-${Date.now()}`,
                 attributeDefinitionId: def.id,
-                operator: allowed[0],
-                value: defaultValueFor(def.dataType),
+                operator: initialOp,
+                value: defaultValueForOperator(def.dataType, initialOp),
             },
         ])
     }
@@ -189,6 +220,34 @@ export default function PositionEditorPage() {
                       }
                     : r,
             ),
+        )
+    }
+
+    /**
+     * Switching operator within the same attribute also requires a
+     * value reset if the operator semantics changed shape — most
+     * importantly, eq/ne use a single option id while in uses a list.
+     * Carrying the old scalar across would round-trip as the wrong
+     * payload and the backend would 422.
+     */
+    const changeRuleOperator = (key: string, newOp: AccessRuleOperator) => {
+        setRules((cur) =>
+            cur.map((r) => {
+                if (r.key !== key) return r
+                const def = attributeLibrary.find((d) => d.id === r.attributeDefinitionId)
+                // Only reset value when the operator semantics differ —
+                // for the same shape (e.g. eq → ne, both scalar ids)
+                // the existing value still fits.
+                const currentShape = operatorValueShape(r.operator, def?.dataType)
+                const nextShape = operatorValueShape(newOp, def?.dataType)
+                return {
+                    ...r,
+                    operator: newOp,
+                    value: currentShape === nextShape
+                        ? r.value
+                        : defaultValueForOperator(def?.dataType, newOp),
+                }
+            }),
         )
     }
 
@@ -426,12 +485,9 @@ export default function PositionEditorPage() {
                                                 <Form.Select
                                                     value={rule.operator}
                                                     onChange={(e) =>
-                                                        setRules((cur) =>
-                                                            cur.map((r) =>
-                                                                r.key === rule.key
-                                                                    ? { ...r, operator: e.target.value as AccessRuleOperator }
-                                                                    : r,
-                                                            ),
+                                                        changeRuleOperator(
+                                                            rule.key,
+                                                            e.target.value as AccessRuleOperator,
                                                         )
                                                     }
                                                 >
@@ -452,6 +508,9 @@ export default function PositionEditorPage() {
                                                         dataType={def.dataType}
                                                         definition={def}
                                                         value={rule.value}
+                                                        multiple={
+                                                            def.dataType === 'one_of_many' && rule.operator === 'in'
+                                                        }
                                                         onChange={(next) =>
                                                             setRules((cur) =>
                                                                 cur.map((r) =>

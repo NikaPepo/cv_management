@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Position;
 use App\Enum\PositionLevel;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -44,14 +45,26 @@ final class PositionRepository extends ServiceEntityRepository
      * fetch. The evaluator post-filters in PHP for the restricted case
      * because rules can mix dataTypes.
      *
+     * The optional `$level` is applied at SQL level so it doesn't eat
+     * into the `limit * 2` over-fetch budget — the candidate /positions
+     * filter must yield enough survivors after access evaluation.
+     *
      * @return Position[]
      */
-    public function findAccessibleCandidates(int $limit = 100): array
-    {
-        return $this->createQueryBuilder('p')
+    public function findAccessibleCandidates(
+        ?PositionLevel $level = null,
+        int $limit = 100,
+    ): array {
+        $qb = $this->createQueryBuilder('p')
             ->orderBy('p.updatedAt', 'DESC')
-            ->setMaxResults($limit * 2) // over-fetch; access evaluator narrows down
-            ->getQuery()
+            ->setMaxResults($limit * 2); // over-fetch; access evaluator narrows down
+
+        if ($level !== null) {
+            $qb->andWhere('p.level = :level')
+                ->setParameter('level', $level->value);
+        }
+
+        return $qb->getQuery()
             ->getResult();
     }
 
@@ -118,17 +131,27 @@ final class PositionRepository extends ServiceEntityRepository
 
     /**
      * Filtered list for the recruiter view (table with sorting/filtering
-     * by company + level). Always eager-loads attributes for the table row.
+     * by company + level).
+     *
+     * `setMaxResults($limit)` operates on the underlying SQL row set,
+     * which is dangerous when the query joins `position_attributes` ->
+     * `attribute_options`: a single Position can fan out into N rows
+     * (one per option of a one_of_many attribute), and LIMIT cuts the
+     * row set, not the distinct Position entities. With 11 Positions
+     * × 10 options the LIMIT 50 silently truncates the result to ~5.
+     *
+     * We therefore DON'T fetch-join options here. The Paginator with
+     * `fetchJoinCollection: false` enforces DISTINCT Position counting
+     * and iterates the root entities, so `$limit` means "up to N
+     * Positions" regardless of how many attribute options exist.
+     * Callers that need attributes can lazy-load them via the existing
+     * entity accessors; this matches the AdminUserController pattern.
      *
      * @return Position[]
      */
     public function findFiltered(?string $company, ?PositionLevel $level, int $limit = 50): array
     {
         $qb = $this->createQueryBuilder('p')
-            ->addSelect('pa', 'def', 'opt')
-            ->leftJoin('p.attributes', 'pa')
-            ->leftJoin('pa.attributeDefinition', 'def')
-            ->leftJoin('def.options', 'opt')
             ->orderBy('p.updatedAt', 'DESC')
             ->setMaxResults($limit);
 
@@ -141,7 +164,8 @@ final class PositionRepository extends ServiceEntityRepository
                 ->setParameter('level', $level->value);
         }
 
-        return $qb->getQuery()->getResult();
+        $paginator = new Paginator($qb->getQuery(), fetchJoinCollection: false);
+        return array_values(iterator_to_array($paginator->getIterator()));
     }
 
     public function save(Position $position): void

@@ -224,6 +224,7 @@ final readonly class PositionService
             $normalizedValue = $this->validateAndNormalizeAccessRuleValue(
                 $item->value,
                 $def,
+                $operator,
             );
             $rule = new PositionAccessRule();
             $rule->setPosition($position);
@@ -235,18 +236,102 @@ final readonly class PositionService
     }
 
     /**
+     * Validates the `eq` / `ne` shape for a one_of_many rule: a single
+     * positive integer that names an option of THIS AttributeDefinition.
+     */
+    private function normalizeOneOfManySingle(AttributeDefinition $def, mixed $value): int
+    {
+        if (!is_int($value)) {
+            throw new UnprocessableEntityHttpException(sprintf(
+                'one_of_many access rule for "%s" expects an option id (integer), got: %s',
+                $def->getName(),
+                get_debug_type($value),
+            ));
+        }
+        foreach ($def->getOptions() as $option) {
+            if ($option->getId() === $value) {
+                return $option->getId();
+            }
+        }
+        throw new UnprocessableEntityHttpException(sprintf(
+            'one_of_many access rule for "%s" references unknown option id %d.',
+            $def->getName(),
+            $value,
+        ));
+    }
+
+    /**
+     * Validates the `in` shape for a one_of_many rule: a non-empty list
+     * of positive integers, every one of which names an option of THIS
+     * AttributeDefinition. Returns a deduped, sorted list of int ids so
+     * the persisted JSON stays clean regardless of client ordering or
+     * accidental duplicates.
+     */
+    private function normalizeOneOfManyIn(AttributeDefinition $def, mixed $value): array
+    {
+        if (!is_array($value)) {
+            throw new UnprocessableEntityHttpException(sprintf(
+                'one_of_many "in" access rule for "%s" expects a non-empty array of option ids, got: %s',
+                $def->getName(),
+                get_debug_type($value),
+            ));
+        }
+        if ($value === []) {
+            throw new UnprocessableEntityHttpException(sprintf(
+                'one_of_many "in" access rule for "%s" must contain at least one option id.',
+                $def->getName(),
+            ));
+        }
+        $validIds = [];
+        foreach ($def->getOptions() as $option) {
+            $validIds[$option->getId()] = true;
+        }
+        $result = [];
+        foreach ($value as $item) {
+            // Accept int and numeric-string alike; force int into storage
+            // so the strict in_array() in the evaluator compares cleanly.
+            $id = is_int($item)
+                ? $item
+                : (is_string($item) && ctype_digit(ltrim($item, '-')) && (int) $item > 0 ? (int) $item : null);
+            if ($id === null || $id <= 0) {
+                throw new UnprocessableEntityHttpException(sprintf(
+                    'one_of_many "in" access rule for "%s" expects a list of positive integers, got: %s',
+                    $def->getName(),
+                    get_debug_type($item),
+                ));
+            }
+            if (!isset($validIds[$id])) {
+                throw new UnprocessableEntityHttpException(sprintf(
+                    'one_of_many "in" access rule for "%s" references unknown option id %d.',
+                    $def->getName(),
+                    $id,
+                ));
+            }
+            if (!in_array($id, $result, true)) {
+                $result[] = $id;
+            }
+        }
+        sort($result);
+        return $result;
+    }
+
+    /**
      * Validates an access-rule `value` against its attribute's dataType
-     * and returns the canonical shape that PositionAccessEvaluator
-     * expects to read. Throws 422 (UnprocessableEntityHttpException)
-     * with a human-readable message if the value's shape is wrong.
+     * and operator returns the canonical shape that
+     * PositionAccessEvaluator expects to read. Throws 422
+     * (UnprocessableEntityHttpException) with a human-readable message
+     * if the value's shape is wrong.
      *
      * The frontend editor uses TypedInput which already produces the
      * right shape per dataType; this server-side gate is the source of
      * truth — anything malformed coming from the wire gets rejected
      * before it can poison the evaluator.
      */
-    private function validateAndNormalizeAccessRuleValue(mixed $value, AttributeDefinition $def): mixed
-    {
+    private function validateAndNormalizeAccessRuleValue(
+        mixed $value,
+        AttributeDefinition $def,
+        AccessRuleOperator $operator,
+    ): mixed {
         $type = $def->getDataType();
 
         // null is allowed for every type — the editor starts rules
@@ -282,33 +367,14 @@ final readonly class PositionService
                 return $value;
 
             case AttributeDataType::OneOfMany:
-                // one_of_many stores the AttributeOption.id (int). The
-                // option must actually belong to this definition —
-                // otherwise the evaluator would silently compare against
-                // an option from a different attribute and the rule
-                // would either match the wrong thing or never match.
-                if (!is_int($value)) {
-                    throw new UnprocessableEntityHttpException(sprintf(
-                        'one_of_many access rule for "%s" expects an option id (integer), got: %s',
-                        $def->getName(),
-                        get_debug_type($value),
-                    ));
-                }
-                $match = null;
-                foreach ($def->getOptions() as $option) {
-                    if ($option->getId() === $value) {
-                        $match = $option;
-                        break;
-                    }
-                }
-                if ($match === null) {
-                    throw new UnprocessableEntityHttpException(sprintf(
-                        'one_of_many access rule for "%s" references unknown option id %d.',
-                        $def->getName(),
-                        $value,
-                    ));
-                }
-                return $match->getId();
+                // one_of_many stores the AttributeOption.id(s) — one int
+                // for eq/ne, a list of ints for in. Each id must belong
+                // to this definition; foreign ids are refused (silent
+                // filtering would mask a client bug and let one attribute
+                // silently rebind another's options).
+                return $operator === AccessRuleOperator::OneOf
+                    ? $this->normalizeOneOfManyIn($def, $value)
+                    : $this->normalizeOneOfManySingle($def, $value);
 
             case AttributeDataType::Date:
                 if (!is_string($value)) {

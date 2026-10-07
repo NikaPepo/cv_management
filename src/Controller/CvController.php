@@ -110,6 +110,11 @@ final class CvController extends AbstractController
 
         $view = $this->cvViewAssembler->assemble($cv);
         $view['hasLiked'] = $isStaff ? $this->likeService->hasLiked($cv, $user) : false;
+        // isOwner lets the SPA gate owner-only actions (Edit attributes,
+        // Delete, Publish). Backend controller already enforces these via
+        // ROLE_RECRUITER/ROLE_ADMIN checks on the mutating endpoints,
+        // but the flag here keeps the read-only view honest.
+        $view['isOwner'] = $isOwner;
 
         return $this->json($view);
     }

@@ -20,8 +20,11 @@ export default function PositionsPage() {
 
     const refresh = async () => {
         try {
+            // Role-based visibility (recruiter/admin get every position,
+            // candidate gets access-filtered) is decided by the backend
+            // based on the session, NOT by an `?all` query param. We
+            // only send the actual filter values.
             const data = await positionApi.list({
-                all: isStaff,
                 company: company === '' ? undefined : company,
                 level: level === '' ? undefined : level,
             })
