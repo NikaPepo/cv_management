@@ -61,3 +61,18 @@ LICENSE
 # --- Editor backup files ---
 *~
 *.tmp
+
+# --- Odoo integration: keep the custom addon in the build context ---
+# The `cv_management_bridge` addon lives under `odoo_addon/`. The
+# `odoo:18.0` image's entrypoint does not read it from env, and the
+# Odoo Dockerfile at `docker/odoo/Dockerfile` does `COPY` it from
+# the build context. No other pattern above matches `odoo_addon/`,
+# but we re-include it explicitly as a defensive measure: if a future
+# change accidentally excludes a path that overlaps with the addon,
+# this exception guarantees the addon survives.
+#
+# Pattern: `!foo` re-includes `foo` after it has been excluded.
+# `!odoo_addon/`  matches the directory itself.
+# `!odoo_addon/**` matches everything under it.
+!odoo_addon/
+!odoo_addon/**
