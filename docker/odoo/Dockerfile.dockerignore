@@ -24,3 +24,10 @@
 # `!odoo_addon/**` matches every nested file under it.
 !odoo_addon/
 !odoo_addon/**
+
+# Re-include the custom entrypoint script. The upstream
+# `odoo:18.0` entrypoint reads `$PORT` for the database port, which
+# collides with Render's use of `$PORT` for the HTTP health-check
+# port. We override it with a wrapper that separates the two;
+# the wrapper file itself must be in the build context.
+!docker/odoo/entrypoint.sh

@@ -105,4 +105,14 @@ EXPOSE 8069
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8069/web/health || exit 1
 
-# Inherit USER odoo, WORKDIR, ENTRYPOINT, CMD from odoo:18.0.
+# Override the upstream `odoo:18.0` entrypoint.
+# Reason: the upstream entrypoint reads the `$PORT` env var for the
+# **database** port, while Render uses `$PORT` to know which port
+# the HTTP health check should scan. The two meanings collide:
+# `PORT=5432` makes the DB connect but Render can't find HTTP;
+# `PORT=8069` makes Render find HTTP but Odoo tries DB on 8069.
+# Our custom entrypoint reads `PG*` for the DB and `PORT`/8069 for
+# HTTP, so both sides can use `PORT` independently.
+COPY --chown=odoo:odoo --chmod=755 docker/odoo/entrypoint.sh /usr/local/bin/odoo-entrypoint
+ENTRYPOINT ["/usr/local/bin/odoo-entrypoint"]
+CMD ["odoo"]
