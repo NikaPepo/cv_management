@@ -113,22 +113,18 @@ class ImportPositionWizard(models.TransientModel):
                 )
 
         endpoint = f"{api_url}/api/odoo/positions/aggregates"
-        # The Symfony backend's trusted_hosts check rejects requests
-        # whose Host header is not on its allowlist. When Odoo lives
-        # in the same Docker network and reaches the backend via the
-        # internal service name (e.g. "nginx"), the request's Host
-        # header is the service name. Pinning it to "localhost" is
-        # safe here because:
-        #   - the request is server-to-server and never leaves the
-        #     Docker network;
-        #   - "localhost" is on every default trusted_hosts allowlist;
-        #   - the bearer token is the real authentication, not Host.
+        # The Host header is left unset so urllib sets it from the URL
+        # host. The previous version pinned "Host: localhost" to work
+        # around Symfony's trusted_hosts check in local docker dev
+        # (where the backend was reached via the internal service name
+        # "nginx" not in the allowlist). On production Render deploys
+        # the request must carry the real public host; pinning to
+        # "localhost" makes Symfony reject the request as untrusted.
         request = urllib.request.Request(
             endpoint,
             headers={
                 "Authorization": f"Bearer {token}",
                 "Accept": "application/json",
-                "Host": "localhost",
                 "User-Agent": "cv_management_bridge/1.0 (+Odoo)",
             },
         )
