@@ -14,6 +14,7 @@ import { attributeApi } from '../api/attributes'
 import type { AttributeDefinition, DataType } from '../types'
 import TagInput from '../components/TagInput'
 import TypedInput from '../components/TypedInput'
+import PositionApiTokenSection from '../components/PositionApiTokenSection'
 import { useT } from '../contexts/AppPreferencesContext'
 
 const LEVEL_VALUES: PositionLevel[] = ['junior', 'middle', 'senior', 'c_level']
@@ -539,6 +540,8 @@ export default function PositionEditorPage() {
                     )}
                 </>
             )}
+
+            {editing && <PositionApiTokenSection positionId={Number(params.id)} />}
 
             <div className="mt-4 d-flex gap-2">
                 <Button onClick={() => void submit()} disabled={saving}>

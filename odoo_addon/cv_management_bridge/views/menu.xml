@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- The settings action must be defined BEFORE the menuitem that
+         references it; Odoo's XML loader does not do a two-pass parse. -->
+    <record id="action_open_cv_bridge_settings" model="ir.actions.act_window">
+        <field name="name">CV Bridge settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+    </record>
+
+    <menuitem id="menu_cv_bridge_root"
+              name="CV Bridge"
+              web_icon="cv_management_bridge,static/description/icon.png"
+              sequence="50"/>
+
+    <menuitem id="menu_imported_positions"
+              name="Imported Positions"
+              parent="menu_cv_bridge_root"
+              action="action_imported_position"
+              sequence="10"/>
+
+    <menuitem id="menu_import_wizard"
+              name="Import Position"
+              parent="menu_cv_bridge_root"
+              action="action_open_wizard"
+              sequence="20"/>
+
+    <menuitem id="menu_cv_bridge_settings"
+              name="Settings"
+              parent="menu_cv_bridge_root"
+              action="action_open_cv_bridge_settings"
+              sequence="30"/>
+
+</odoo>

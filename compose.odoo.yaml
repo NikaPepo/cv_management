@@ -1,0 +1,112 @@
+# Local-only Odoo 18 add-on stack for the CV Management bridge.
+#
+# This file is a Docker Compose *override* — it joins the existing
+# `course_project_app` network (created by docker-compose.yaml) and
+# adds two services:
+#
+#   - odoo-db   : dedicated PostgreSQL for Odoo (NEVER shared with
+#                 the Symfony database; Odoo uses its own schema and
+#                 migrations and must not collide with the app's DB).
+#   - odoo-web  : Odoo 18 Community with the cv_management_bridge
+#                 addon mounted under /mnt/extra-addons.
+#
+# Usage (from /home/nika/www/course_project):
+#
+#   # 1. Start (or restart) the main stack if not already up:
+#   docker compose up -d
+#
+#   # 2. Start Odoo alongside it (re-uses the existing network):
+#   docker compose -f compose.odoo.yaml up -d
+#
+#   # 3. Open the Odoo UI:
+#   #    http://localhost:8069
+#   #    On first visit: create a new database (e.g. "cv_bridge"),
+#   #    set admin email/password, then "Log in".
+#
+#   # 4. Activate developer mode, then Apps → Update Apps List,
+#   #    search "CV Bridge" → Install.
+#
+#   # 5. Stop only the Odoo stack (the main stack keeps running):
+#   docker compose -f compose.odoo.yaml down
+#
+# The Symfony API endpoint reachable from the Odoo container is
+#   http://nginx:80/api/odoo/positions/aggregates
+# (nginx is the service name in docker-compose.yaml, port 80 inside
+# the course_project_app network). The addon wizard accepts this URL
+# as the "API base URL" when configuring the bridge.
+#
+# No production secrets are committed. The default Odoo admin
+# password and PostgreSQL password here are for LOCAL DEVELOPMENT
+# ONLY and match the dev defaults already used in the rest of the
+# project (DB_USERNAME=app / DB_PASSWORD=password).
+
+services:
+  odoo-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: odoo
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo-db-data:/var/lib/postgresql
+    networks:
+      - odoo-net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U odoo -d odoo']
+      retries: 5
+      timeout: 5s
+    # No host port published: Odoo DB is for the Odoo container only.
+
+  odoo-web:
+    # Build the same image that Render will build when it
+    # processes docker/odoo/Dockerfile, so local dev and production
+    # share an identical Odoo + addon filesystem. Build context is
+    # the repo root. Render's manual Web Service configuration will
+    # point at the same Dockerfile path with the same context.
+    build:
+      context: .
+      dockerfile: docker/odoo/Dockerfile
+    image: cv-odoo:local
+    depends_on:
+      odoo-db:
+        condition: service_healthy
+    ports:
+      - '${ODOO_PORT:-8069}:8069'
+    environment:
+      # Odoo image looks for PGHOST/PGUSER/PGPASSWORD/PGDATABASE to
+      # locate its database. (Earlier we tried HOSTNAME/USER/PASSWORD,
+      # which Odoo does NOT read — those are not its expected names.)
+      PGHOST: odoo-db
+      PGUSER: odoo
+      PGPASSWORD: odoo
+    volumes:
+      # Persistent storage for Odoo filestore (uploaded files, etc.)
+      # and the Odoo session database file. Kept separate from the DB
+      # and the Odoo session database file. Kept separate from the DB
+      # volume because they are managed by different processes.
+      - odoo-web-data:/var/lib/odoo
+    networks:
+      - odoo-net
+      - course_project_app
+    # Give the container a moment to talk to the Odoo DB on first
+    # boot; Odoo retries internally but a tiny grace is friendlier.
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:8069/web/health 1>/dev/null || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+networks:
+  # The Odoo services talk to each other here.
+  odoo-net:
+    driver: bridge
+  # External — already created by docker-compose.yaml.
+  course_project_app:
+    external: true
+
+volumes:
+  odoo-db-data:
+    driver: local
+  odoo-web-data:
+    driver: local

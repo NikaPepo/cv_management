@@ -1,0 +1,21 @@
+{
+    "name": "CV Management — Odoo Bridge",
+    "version": "1.0.0",
+    "summary": "Import aggregated Position statistics from the CV Management backend.",
+    "description": "Read-only bridge that pulls aggregated Position + attribute statistics from the CV Management Symfony API. The bridge never modifies the source data and stores only what it needs for the Odoo view.",
+    "author": "Course Project",
+    "license": "LGPL-3",
+    "category": "Tools",
+    "depends": ["base"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/res_config_settings_views.xml",
+        "views/imported_position_views.xml",
+        "views/imported_position_attribute_views.xml",
+        "views/wizard_views.xml",
+        "views/menu.xml",
+    ],
+    "installable": True,
+    "application": True,
+    "auto_install": False,
+}

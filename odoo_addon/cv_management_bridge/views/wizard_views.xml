@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_imported_position_wizard_form" model="ir.ui.view">
+        <field name="name">imported.position.wizard.form</field>
+        <field name="model">imported.position.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import a Position">
+                <group>
+                    <field name="api_url"
+                           placeholder="Leave blank to use Settings value"/>
+                    <field name="state" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_import"
+                            string="Import"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_open_wizard" model="ir.actions.act_window">
+        <field name="name">Import Position</field>
+        <field name="res_model">imported.position.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

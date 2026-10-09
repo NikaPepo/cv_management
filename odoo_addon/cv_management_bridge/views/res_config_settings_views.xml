@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        The CV Management settings inherit the base res.config.settings
+        form and append a section for the bridge configuration. The base
+        form in Odoo 18 is a JavaScript-rendered canvas (js_class=
+        base_settings), so we must use the standard xpath injection point
+        and put our fields inside a settings block.
+    -->
+    <record id="res_config_settings_view_form_cv_bridge" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.cv.bridge</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <div class="app_settings_block" data-string="CV Bridge" string="CV Bridge" groups="base.group_system">
+                    <h2>CV Bridge</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="cv_bridge_api_url" string="CV Management API base URL"/>
+                                <div class="text-muted">
+                                    Base URL of the CV Management backend. Must be reachable
+                                    from the Odoo server. Production deployments should use HTTPS.
+                                </div>
+                                <field name="cv_bridge_api_url" placeholder="http://nginx:80"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="cv_bridge_api_token" string="CV Management API token"/>
+                                <div class="text-muted">
+                                    Bearer token issued by /api/positions/{id}/api-token on
+                                    the CV Management backend. Stored as a system parameter;
+                                    never logged. The form masks the value.
+                                </div>
+                                <field name="cv_bridge_api_token" password="True"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

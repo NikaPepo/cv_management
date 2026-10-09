@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_imported_position_attribute_form" model="ir.ui.view">
+        <field name="name">imported.position.attribute.form</field>
+        <field name="model">imported.position.attribute</field>
+        <field name="arch" type="xml">
+            <form string="Aggregated attribute" create="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="data_type"/>
+                            <field name="is_required"/>
+                        </group>
+                        <group>
+                            <field name="attribute_external_id"/>
+                            <field name="aggregation_count"/>
+                        </group>
+                    </group>
+                    <group string="Aggregation (read-only)">
+                        <field name="aggregation_json" widget="ace"
+                               options="{'mode': 'json'}" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

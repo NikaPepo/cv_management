@@ -95,4 +95,34 @@ export const positionApi = {
     async remove(id: number): Promise<void> {
         await api.delete(`/api/positions/${id}`)
     },
+
+    // API tokens (Odoo integration)
+    async listApiTokens(positionId: number): Promise<{ items: ApiTokenMetadata[] }> {
+        const { data } = await api.get<{ items: ApiTokenMetadata[] }>(`/api/positions/${positionId}/api-token`)
+        return data
+    },
+    async createApiToken(
+        positionId: number,
+        label?: string,
+    ): Promise<{ id: number; positionId: number; label: string | null; prefix: string; secret: string; createdAt: string; isActive: boolean }> {
+        const { data } = await api.post(`/api/positions/${positionId}/api-token`, { label: label ?? null })
+        return data
+    },
+    async revokeApiToken(positionId: number, tokenId: number): Promise<void> {
+        await api.delete(`/api/positions/${positionId}/api-token/${tokenId}`)
+    },
+    async deleteApiToken(positionId: number, tokenId: number): Promise<void> {
+        await api.delete(`/api/positions/${positionId}/api-token/${tokenId}/hard`)
+    },
+}
+
+export interface ApiTokenMetadata {
+    id: number
+    positionId: number
+    label: string | null
+    prefix: string
+    createdAt: string
+    lastUsedAt: string | null
+    revokedAt: string | null
+    isActive: boolean
 }

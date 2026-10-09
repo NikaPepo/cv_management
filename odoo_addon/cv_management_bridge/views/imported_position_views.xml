@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_imported_position_tree" model="ir.ui.view">
+        <field name="name">imported.position.tree</field>
+        <field name="model">imported.position</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="title"/>
+                <field name="company"/>
+                <field name="level"/>
+                <field name="is_public"/>
+                <field name="total_candidates"/>
+                <field name="last_imported_at"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_imported_position_form" model="ir.ui.view">
+        <field name="name">imported.position.form</field>
+        <field name="model">imported.position</field>
+        <field name="arch" type="xml">
+            <form string="Imported Position" create="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="title"/>
+                            <field name="company"/>
+                            <field name="level"/>
+                            <field name="is_public"/>
+                        </group>
+                        <group>
+                            <field name="external_id"/>
+                            <field name="total_candidates"/>
+                            <field name="max_projects"/>
+                            <field name="last_imported_at" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="project_tag_filter" readonly="1"/>
+                        <field name="short_description" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Attribute aggregates">
+                            <field name="attribute_ids" mode="list" readonly="1">
+                                <list decoration-muted="aggregation_count == 0">
+                                    <field name="name"/>
+                                    <field name="data_type"/>
+                                    <field name="is_required"/>
+                                    <field name="aggregation_count"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_imported_position" model="ir.actions.act_window">
+        <field name="name">Imported Positions</field>
+        <field name="res_model">imported.position</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

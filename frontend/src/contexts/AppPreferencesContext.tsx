@@ -98,6 +98,7 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'common.delete': 'Delete',
         'common.edit': 'Edit',
         'common.add': 'Add',
+        'common.error': 'Something went wrong.',
         'common.remove': 'Remove',
         'common.back': 'Back',
 
@@ -303,6 +304,23 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'editor.save.conflict': 'Position was modified by another session. Reload to see the latest changes before saving again.',
         'editor.save.failed': 'Failed to save.',
 
+        // --- API token (Odoo) ---
+        'editor.api_token.title': 'API token (Odoo)',
+        'editor.api_token.empty': 'No tokens yet. Generate one to expose this position to Odoo.',
+        'editor.api_token.label': 'Label (optional)',
+        'editor.api_token.generate': 'Generate token',
+        'editor.api_token.revoke': 'Revoke',
+        'editor.api_token.revoke_confirm': 'Revoke this token? The Odoo integration will stop working immediately.',
+        'editor.api_token.delete': 'Delete permanently',
+        'editor.api_token.delete_confirm': 'Permanently delete this revoked token? This cannot be undone.',
+        'editor.api_token.never_used': 'Never used',
+        'editor.api_token.status.active': 'Active',
+        'editor.api_token.status.revoked': 'Revoked',
+        'editor.api_token.shown_once': 'Copy this token now. It will not be shown again.',
+        'editor.api_token.copy': 'Copy to clipboard',
+        'editor.api_token.copied': 'Copied',
+        'editor.api_token.close': "I've saved it",
+
         // --- position view ---
         'view.tab.details': 'Details',
         'view.tab.discussion': 'Discussion',
@@ -470,6 +488,7 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'common.delete': 'წაშლა',
         'common.edit': 'რედაქტირება',
         'common.add': 'დამატება',
+        'common.error': 'რაღაც შეცდომა მოხდა.',
         'common.remove': 'წაშლა',
         'common.back': 'უკან',
 
@@ -650,6 +669,23 @@ const TRANSLATIONS: Record<Locale, Record<string, string>> = {
         'editor.cancel': 'გაუქმება',
         'editor.save.conflict': 'პოზიცია სხვა სესიაში შეიცვალა. განაახლეთ გვერდი უახლესი ცვლილებების სანახავად და შემდეგ სცადეთ თავიდან.',
         'editor.save.failed': 'შენახვა ვერ მოხერხდა.',
+
+        // --- API token (Odoo) ---
+        'editor.api_token.title': 'API ტოკენი (Odoo)',
+        'editor.api_token.empty': 'ტოკენები ჯერ არ არის. შექმენით ერთი პოზიციის Odoo-ში გამოსატანად.',
+        'editor.api_token.label': 'მეტსახელა (არასავალდებულო)',
+        'editor.api_token.generate': 'ტოკენის გენერაცია',
+        'editor.api_token.revoke': 'გაუქმება',
+        'editor.api_token.revoke_confirm': 'გააუქმოთ ეს ტოკენი? Odoo ინტეგრაცია დაუყოვნებლივ შეწყდება.',
+        'editor.api_token.delete': 'სამუდამოდ წაშლა',
+        'editor.api_token.delete_confirm': 'სამუდამოდ წაშალოთ ეს გაუქმებული ტოკენი? ეს ქმედება ვერ გაუქმდება.',
+        'editor.api_token.never_used': 'არასოდეს გამოყენებულა',
+        'editor.api_token.status.active': 'აქტიური',
+        'editor.api_token.status.revoked': 'გაუქმებული',
+        'editor.api_token.shown_once': 'დააკოპირეთ ტოკენი ახლა. მოგვიანებით ვეღარ ნახავთ.',
+        'editor.api_token.copy': 'კოპირება',
+        'editor.api_token.copied': 'დაკოპირდა',
+        'editor.api_token.close': 'შევინახე',
 
         'view.tab.details': 'დეტალები',
         'view.tab.discussion': 'განხილვა',
