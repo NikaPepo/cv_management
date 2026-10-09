@@ -1,0 +1,26 @@
+# Build context exclusion file for `docker/odoo/Dockerfile` only.
+#
+# Docker BuildKit first looks for a file named `<Dockerfile>.dockerignore`
+# next to the Dockerfile. If it exists, that file is used INSTEAD OF
+# the root `.dockerignore`. The root `.dockerignore` (which is tuned
+# for the Symfony/React production build) is therefore completely
+# ignored for the Odoo build, and we do not have to fight against
+# its patterns.
+#
+# Strategy: allowlist. We exclude EVERYTHING and re-include only the
+# paths that `docker/odoo/Dockerfile` actually COPYs from the build
+# context. The only such path is:
+#
+#   odoo_addon/cv_management_bridge/   (stage 1, line: COPY odoo_addon/...)
+#
+# Everything else (.env, secrets, vendor/, node_modules/, tests/, the
+# entire Symfony app, the main Dockerfile, etc.) is excluded.
+
+# Exclude everything in the build context.
+*
+
+# Re-include the addon directory and all of its contents.
+# `!odoo_addon/`  matches the directory itself.
+# `!odoo_addon/**` matches every nested file under it.
+!odoo_addon/
+!odoo_addon/**
